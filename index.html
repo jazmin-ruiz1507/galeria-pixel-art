@@ -40,8 +40,9 @@
 
     h1 { color: #3b82f6; margin-top: 0; }
     
-    /* Formulario */
+    /* Formulario de Subida (Oculto por defecto) */
     .card-form {
+      display: none; /* 👈 Se oculta hasta activar el modo admin */
       background: #1e1e1e;
       padding: 20px;
       border-radius: 8px;
@@ -50,6 +51,7 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
       text-align: center;
       box-sizing: border-box;
+      margin-bottom: 20px;
     }
     input[type="text"] {
       width: 90%;
@@ -80,7 +82,7 @@
       gap: 15px;
       width: 100%;
       max-width: 800px;
-      margin-top: 30px;
+      margin-top: 20px;
     }
     .gallery-card {
       background: #1e1e1e;
@@ -171,7 +173,8 @@
 
   <h1>Galería de Pixel Art</h1>
 
-  <div class="card-form">
+  <!-- El panel para subir se muestra únicamente si eres Admin -->
+  <div class="card-form" id="uploadForm">
     <h2>Subir nuevo dibujo</h2>
     <input type="text" id="nameInput" placeholder="Nombre del personaje / dibujo">
     
@@ -194,20 +197,24 @@
 
   <script>
     const API_KEY = "9fc58ee8b707046ece9681fa65e39604";
-    const ADMIN_PIN = "1234"; // 👈 AQUÍ PUEDES CAMBIAR TU CLAVE
+    const ADMIN_PIN = "1234"; // 👈 Tu clave secreta
     let isAdmin = false;
 
     function toggleAdminMode() {
+      const uploadForm = document.getElementById('uploadForm');
+
       if (isAdmin) {
         isAdmin = false;
         document.getElementById('adminBtn').innerText = "🔐 Modo Admin";
+        uploadForm.style.display = "none";
         alert("Modo Admin desactivado.");
       } else {
         const pass = prompt("Ingresa la clave de administrador:");
         if (pass === ADMIN_PIN) {
           isAdmin = true;
           document.getElementById('adminBtn').innerText = "🔓 Salir de Modo Admin";
-          alert("¡Modo Admin activado! Ya puedes editar y eliminar.");
+          uploadForm.style.display = "block";
+          alert("¡Modo Admin activado!");
         } else if (pass !== null) {
           alert("Clave incorrecta.");
         }
@@ -216,6 +223,7 @@
     }
 
     async function subirImagen() {
+      if (!isAdmin) return;
       const nameInput = document.getElementById('nameInput');
       const fileInput = document.getElementById('fileInput');
       const statusMsg = document.getElementById('statusMsg');
@@ -272,7 +280,6 @@
         const card = document.createElement('div');
         card.className = 'gallery-card';
         
-        // Solo muestra botones si el usuario activó el modo admin
         const actionButtons = isAdmin ? `
           <div class="card-actions">
             <button class="btn-action btn-edit" onclick="editarTitulo(${index})">✏️ Editar</button>
