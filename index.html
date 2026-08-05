@@ -18,10 +18,65 @@
       align-items: center;
       padding: 15px;
       margin: 0;
+      overflow-x: hidden;
     }
+    
+    /* Barra de Administración */
+    .admin-bar {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+    .btn-admin-toggle {
+      background: transparent;
+      border: 1px solid #444;
+      color: #aaa;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+    .btn-admin-toggle:hover { border-color: #3b82f6; color: #fff; }
 
     h1 { color: #3b82f6; margin-top: 0; font-size: 1.6rem; }
+    
+    /* Formulario de Subida */
+    .card-form {
+      display: none;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      text-align: center;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      width: 90%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      border: 1px solid #333;
+      background: #2a2a2a;
+      color: #fff;
+    }
+    .btn-upload {
+      background-color: #359bf0;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+    }
+    .btn-upload:hover { background-color: #2580d0; }
 
+    /* Galería Grid */
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -29,13 +84,18 @@
       width: 100%;
       max-width: 800px;
       margin-top: 15px;
+      box-sizing: border-box;
     }
     .gallery-card {
       background: #1e1e1e;
       border-radius: 8px;
       padding: 8px;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       border: 1px solid #2a2a2a;
+      box-sizing: border-box;
     }
     .gallery-card img {
       width: 100%;
@@ -43,20 +103,36 @@
       object-fit: contain;
       background: #000;
       border-radius: 6px;
+      cursor: pointer;
+    }
+    .gallery-card h3 {
+      font-size: 0.9rem;
+      margin: 8px 0;
+      word-break: break-word;
     }
 
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      justify-content: center;
+    }
     .btn-action {
-      background-color: #eab308;
-      color: #000;
-      padding: 6px;
+      background-color: #262626;
+      padding: 5px 8px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.8em;
-      font-weight: bold;
-      border: none;
-      margin-top: 5px;
-      width: 100%;
+      font-size: 0.75em;
+      font-weight: 500;
+      color: #e5e5e5;
+      border: 1px solid #444;
     }
+    .btn-edit { border-color: #3b82f6; }
+    .btn-edit:hover { background-color: #3b82f6; color: #ffffff; }
+    .btn-crop { border-color: #eab308; }
+    .btn-crop:hover { background-color: #eab308; color: #000; }
+    .btn-delete { border-color: #ef4444; }
+    .btn-delete:hover { background-color: #ef4444; color: #ffffff; }
 
     /* Editor Modal */
     .editor-modal {
@@ -75,7 +151,6 @@
       box-sizing: border-box;
     }
 
-    /* Selector de Modos Separados */
     .mode-selector {
       display: flex;
       gap: 10px;
@@ -127,7 +202,6 @@
       display: none;
     }
 
-    /* Paneles e Interfaz Separada */
     .tool-panel {
       width: 100%;
       max-width: 450px;
@@ -184,11 +258,28 @@
 </head>
 <body>
 
-  <h1>Galería de Pixel Art</h1>
-  <div class="gallery-grid" id="galleryGrid">Cargando...</div>
+  <!-- BARRA MODO ADMIN -->
+  <div class="admin-bar">
+    <button class="btn-admin-toggle" onclick="toggleAdminMode()" id="adminBtn">🔐 Modo Admin</button>
+  </div>
 
+  <h1>Galería de Pixel Art</h1>
+
+  <!-- FORMULARIO SUBIR IMAGEN (MODO ADMIN) -->
+  <div class="card-form" id="uploadForm">
+    <h2>Subir nuevo dibujo</h2>
+    <input type="text" id="nameInput" placeholder="Nombre del personaje / dibujo">
+    <input type="file" id="fileInput" accept="image/*" capture="environment" style="display: none;" onchange="subirImagen()">
+    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
+      📷 Tomar Foto / Seleccionar
+    </button>
+    <div id="statusMsg" style="margin-top: 10px; font-size: 0.9em;"></div>
+  </div>
+
+  <div class="gallery-grid" id="galleryGrid">Cargando galería...</div>
+
+  <!-- EDITOR MODAL -->
   <div id="editorModal" class="editor-modal">
-    <!-- Pestañas de modo -->
     <div class="mode-selector">
       <button id="tabCrop" class="btn-tab active" onclick="cambiarModo('crop')">✂️ Recortar</button>
       <button id="tabPaint" class="btn-tab" onclick="cambiarModo('paint')">🎨 Pincel / Tapar Firma</button>
@@ -199,12 +290,12 @@
       <canvas id="paintCanvas" class="paint-canvas"></canvas>
     </div>
 
-    <!-- Panel 1: Recorte -->
+    <!-- PANEL 1: RECORTE -->
     <div id="panelCrop" class="tool-panel active">
-      <button class="btn-action" style="padding: 12px; background: #eab308;" onclick="aplicarRecorte()">Aplicar Recorte Área Seleccionada</button>
+      <button class="btn-action" style="padding: 12px; background: #eab308; color: #000; font-weight: bold;" onclick="aplicarRecorte()">Aplicar Recorte Área Seleccionada</button>
     </div>
 
-    <!-- Panel 2: Pincel (Aparte) -->
+    <!-- PANEL 2: PINCEL (APARTE) -->
     <div id="panelPaint" class="tool-panel">
       <div class="color-panel">
         <div>
@@ -215,7 +306,7 @@
           <label style="font-size: 0.8rem;">Grosor:</label>
           <input type="range" id="brushSize" min="5" max="50" value="20" style="width: 80px;">
         </div>
-        <button style="background: #2a2a2a; color: #ef4444; border: 1px solid #ef4444; border-radius: 6px; padding: 5px 10px;" onclick="deshacer()">↩️ Deshacer</button>
+        <button style="background: #2a2a2a; color: #ef4444; border: 1px solid #ef4444; border-radius: 6px; padding: 5px 10px; cursor: pointer;" onclick="deshacer()">↩️ Deshacer</button>
       </div>
     </div>
 
@@ -229,12 +320,34 @@
     const IMGBB_API_KEY = "9fc58ee8b707046ece9681fa65e39604";
     const JSONBIN_BIN_ID = "6a7297f9f5f4af5e29ec52c2";
     const JSONBIN_MASTER_KEY = "$2a$10$vygQg5yM2D./HgSdwYY3FurZQV/dUU5iTNvDzdDmi7eQRyVSaA6Fe";
+    const ADMIN_PIN = "1234";
 
+    let isAdmin = false;
     let galeriaActual = [];
     let cropper = null;
     let indiceEnEdicion = -1;
     let paintCanvas, paintCtx, isDrawing = false;
     let historyStack = [];
+
+    // CONTROL DEL MODO ADMIN
+    function toggleAdminMode() {
+      const uploadForm = document.getElementById('uploadForm');
+      if (isAdmin) {
+        isAdmin = false;
+        document.getElementById('adminBtn').innerText = "🔐 Modo Admin";
+        uploadForm.style.display = "none";
+      } else {
+        const pass = prompt("Ingresa la clave de administrador:");
+        if (pass === ADMIN_PIN) {
+          isAdmin = true;
+          document.getElementById('adminBtn').innerText = "🔓 Salir de Modo Admin";
+          uploadForm.style.display = "block";
+        } else if (pass !== null) {
+          alert("Clave incorrecta.");
+        }
+      }
+      cargarGaleriaUI();
+    }
 
     async function cargarGaleria() {
       try {
@@ -243,18 +356,97 @@
         });
         const data = await res.json();
         galeriaActual = Array.isArray(data.record) ? data.record : [];
-        
-        const grid = document.getElementById('galleryGrid');
-        grid.innerHTML = '';
-        galeriaActual.forEach((item, index) => {
-          grid.innerHTML += `
-            <div class="gallery-card">
-              <img src="${item.url}" alt="${item.title}">
-              <button class="btn-action" onclick="abrirEditor(${index})">⚙️ Editar Imagen</button>
-            </div>
-          `;
-        });
+        cargarGaleriaUI();
       } catch (e) { console.error(e); }
+    }
+
+    function cargarGaleriaUI() {
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = '';
+
+      if (galeriaActual.length === 0) {
+        grid.innerHTML = '<p style="grid-column: 1/-1; color: #888;">No hay imágenes registradas.</p>';
+        return;
+      }
+
+      galeriaActual.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'gallery-card';
+
+        const actionButtons = isAdmin ? `
+          <div class="card-actions">
+            <button class="btn-action btn-edit" onclick="renombrar(${index})">✏️ Renombrar</button>
+            <button class="btn-action btn-crop" onclick="abrirEditor(${index})">⚙️ Recortar / Tapar Firma</button>
+            <button class="btn-action btn-delete" onclick="eliminar(${index})">🗑️ Eliminar</button>
+          </div>
+        ` : '';
+
+        card.innerHTML = `
+          <img src="${item.url}" alt="${item.title}">
+          <h3>${item.title}</h3>
+          ${actionButtons}
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function guardarGaleriaNube(nuevaGaleria) {
+      await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "X-Master-Key": JSONBIN_MASTER_KEY },
+        body: JSON.stringify(nuevaGaleria)
+      });
+      galeriaActual = nuevaGaleria;
+      cargarGaleriaUI();
+    }
+
+    async function subirImagen() {
+      const fileInput = document.getElementById('fileInput');
+      const nameInput = document.getElementById('nameInput');
+      const statusMsg = document.getElementById('statusMsg');
+
+      if (!fileInput.files[0]) return;
+      const title = nameInput.value.trim() || "Sin Título";
+
+      statusMsg.innerText = "Subiendo imagen...";
+
+      try {
+        const formData = new FormData();
+        formData.append("image", fileInput.files[0]);
+
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          const nuevaGaleria = [...galeriaActual, { title: title, url: data.data.url }];
+          await guardarGaleriaNube(nuevaGaleria);
+          statusMsg.innerText = "¡Imagen guardada!";
+          nameInput.value = "";
+          fileInput.value = "";
+        }
+      } catch (err) {
+        statusMsg.innerText = "Error al subir la imagen.";
+      }
+    }
+
+    async function renombrar(index) {
+      const nuevoNombre = prompt("Nuevo nombre para la obra:", galeriaActual[index].title);
+      if (nuevoNombre && nuevoNombre.trim() !== "") {
+        const copia = [...galeriaActual];
+        copia[index].title = nuevoNombre.trim();
+        await guardarGaleriaNube(copia);
+      }
+    }
+
+    async function eliminar(index) {
+      if (confirm(`¿Eliminar "${galeriaActual[index].title}"?`)) {
+        const copia = [...galeriaActual];
+        copia.splice(index, 1);
+        await guardarGaleriaNube(copia);
+      }
     }
 
     function abrirEditor(index) {
@@ -286,7 +478,6 @@
           cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.9 });
         }
       } else if (modo === 'paint') {
-        // Al pasar a modo Pincel, destruimos cropper para liberar la imagen
         if (cropper) {
           const croppedCanvas = cropper.getCroppedCanvas();
           if (croppedCanvas) {
@@ -295,7 +486,6 @@
           cropper.destroy();
           cropper = null;
         }
-        
         setTimeout(activarPincel, 150);
       }
     }
@@ -331,7 +521,6 @@
       paintCtx.lineCap = 'round';
       paintCtx.lineJoin = 'round';
 
-      // Asignar controladores
       paintCanvas.onmousedown = empezar;
       paintCanvas.onmousemove = mover;
       paintCanvas.onmouseup = parar;
@@ -426,12 +615,7 @@
 
         if (uploadData.success) {
           galeriaActual[indiceEnEdicion].url = uploadData.data.url;
-          await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", "X-Master-Key": JSONBIN_MASTER_KEY },
-            body: JSON.stringify(galeriaActual)
-          });
-          cargarGaleria();
+          await guardarGaleriaNube(galeriaActual);
           cerrarEditor();
         }
       } catch (e) {
