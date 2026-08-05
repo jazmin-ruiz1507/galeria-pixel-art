@@ -401,6 +401,18 @@
     let paintCanvas, paintCtx, isDrawing = false;
     let historyStack = [];
 
+    // Manejar el botón 'Atrás' del navegador
+    window.addEventListener('popstate', function(event) {
+      const previewModal = document.getElementById('previewModal');
+      const editorModal = document.getElementById('editorModal');
+
+      if (previewModal.style.display === "flex") {
+        cerrarVistaPrevia(false);
+      } else if (editorModal.style.display === "flex") {
+        cerrarEditor(false);
+      }
+    });
+
     function toggleAdminMode() {
       const uploadForm = document.getElementById('uploadForm');
       if (isAdmin) {
@@ -469,10 +481,18 @@
       img.src = galeriaActual[index].url;
       title.innerText = galeriaActual[index].title;
       modal.style.display = "flex";
+
+      history.pushState({ modalOpen: true }, "");
     }
 
-    function cerrarVistaPrevia() {
-      document.getElementById('previewModal').style.display = "none";
+    function cerrarVistaPrevia(popHistory = true) {
+      const modal = document.getElementById('previewModal');
+      if (modal.style.display === "flex") {
+        modal.style.display = "none";
+        if (popHistory && history.state && history.state.modalOpen) {
+          history.back();
+        }
+      }
     }
 
     async function guardarGaleriaNube(nuevaGaleria) {
@@ -550,6 +570,8 @@
       img.onload = function() {
         cambiarModo('crop');
       };
+
+      history.pushState({ modalOpen: true }, "");
     }
 
     function actualizarBrillo() {
@@ -686,9 +708,15 @@
       }
     }
 
-    function cerrarEditor() {
-      if (cropper) { cropper.destroy(); cropper = null; }
-      document.getElementById('editorModal').style.display = "none";
+    function cerrarEditor(popHistory = true) {
+      const modal = document.getElementById('editorModal');
+      if (modal.style.display === "flex") {
+        if (cropper) { cropper.destroy(); cropper = null; }
+        modal.style.display = "none";
+        if (popHistory && history.state && history.state.modalOpen) {
+          history.back();
+        }
+      }
     }
 
     async function guardarImagen() {
