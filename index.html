@@ -277,10 +277,10 @@
 
   <!-- EDITOR MODAL -->
   <div id="editorModal" class="editor-modal">
-    <!-- PESTAÑAS NAVEGACIÓN -->
+    <!-- PESTAÑAS DE MODO ÚNICAS -->
     <div class="mode-selector">
-      <button id="tabCrop" class="btn-tab active" onclick="cambiarModo('crop')">Modo Recortar</button>
-      <button id="tabPaint" class="btn-tab" onclick="cambiarModo('paint')">Modo Pincel</button>
+      <button id="tabCrop" class="btn-tab active" onclick="cambiarModo('crop')">Recortar</button>
+      <button id="tabPaint" class="btn-tab" onclick="cambiarModo('paint')">🎨 Pincel / Tapar Firma</button>
     </div>
 
     <div class="editor-wrapper" id="editorWrapper">
@@ -288,12 +288,12 @@
       <canvas id="paintCanvas"></canvas>
     </div>
 
-    <!-- UNICO BOTÓN DE RECORTE -->
+    <!-- BOTÓN DE ACCIÓN RECORTE -->
     <div id="panelCrop" class="tool-panel active">
       <button class="btn-action" style="padding: 12px; background: #eab308; color: #000; font-weight: bold; font-size: 0.9rem;" onclick="aplicarRecorte()">Aplicar Recorte</button>
     </div>
 
-    <!-- PANEL DE PINCEL Y COLORES -->
+    <!-- BARRA DE HERRAMIENTAS Y COLORES DEL PINCEL -->
     <div id="panelPaint" class="tool-panel">
       <div class="color-panel">
         <div>
