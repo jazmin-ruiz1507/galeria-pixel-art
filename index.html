@@ -166,7 +166,7 @@
       position: relative;
       width: 100%;
       max-width: 450px;
-      height: 50vh;
+      height: 48vh;
       background: #000;
       display: flex;
       align-items: center;
@@ -179,6 +179,7 @@
       max-width: 100%;
       max-height: 100%;
       display: block;
+      transition: filter 0.1s ease;
     }
 
     #paintCanvas {
@@ -192,6 +193,28 @@
     .tool-panel {
       width: 100%;
       max-width: 450px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #1e1e1e;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #2a2a2a;
+      box-sizing: border-box;
+    }
+    .slider-container label {
+      font-size: 0.85rem;
+      color: #ddd;
+    }
+    .slider-container input[type="range"] {
+      flex: 1;
     }
 
     .color-panel {
@@ -275,6 +298,13 @@
 
     <!-- PANEL ÚNICO Y DINÁMICO DE HERRAMIENTAS -->
     <div class="tool-panel">
+      <!-- CONTROL DE BRILLO COMPARTIDO -->
+      <div class="slider-container">
+        <label for="brightnessSlider">☀️ Brillo:</label>
+        <input type="range" id="brightnessSlider" min="50" max="150" value="100" oninput="actualizarBrillo()">
+        <span id="brightnessVal" style="font-size: 0.85rem; width: 35px; text-align: right;">100%</span>
+      </div>
+
       <!-- MODO RECORTE -->
       <div id="panelCropControls">
         <button class="btn-action" style="width: 100%; padding: 12px; background: #eab308; color: #000; font-weight: bold; font-size: 0.95rem; border: none; border-radius: 8px;" onclick="aplicarRecorte()">
@@ -443,6 +473,10 @@
       const modal = document.getElementById('editorModal');
       const img = document.getElementById('imageToEdit');
       
+      document.getElementById('brightnessSlider').value = 100;
+      document.getElementById('brightnessVal').innerText = "100%";
+      img.style.filter = "brightness(100%)";
+
       modal.style.display = "flex";
       img.crossOrigin = "anonymous";
       img.src = galeriaActual[index].url;
@@ -450,6 +484,19 @@
       img.onload = function() {
         cambiarModo('crop');
       };
+    }
+
+    function actualizarBrillo() {
+      const val = document.getElementById('brightnessSlider').value;
+      document.getElementById('brightnessVal').innerText = val + "%";
+      
+      const img = document.getElementById('imageToEdit');
+      img.style.filter = `brightness(${val}%)`;
+
+      const cropperImg = document.querySelector('.cropper-container img');
+      if (cropperImg) {
+        cropperImg.style.filter = `brightness(${val}%)`;
+      }
     }
 
     function cambiarModo(modo) {
@@ -470,6 +517,7 @@
             autoCropArea: 0.9,
             zoomable: false
           });
+          setTimeout(actualizarBrillo, 50);
         }
       } else if (modo === 'paint') {
         if (cropper) {
@@ -588,15 +636,32 @@
 
       try {
         const img = document.getElementById('imageToEdit');
+        let baseCanvas;
+
+        if (cropper) {
+          baseCanvas = cropper.getCroppedCanvas();
+        } else {
+          baseCanvas = document.createElement('canvas');
+          baseCanvas.width = img.naturalWidth;
+          baseCanvas.height = img.naturalHeight;
+          const ctx = baseCanvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+        }
+
         const finalCanvas = document.createElement('canvas');
-        finalCanvas.width = img.naturalWidth;
-        finalCanvas.height = img.naturalHeight;
+        finalCanvas.width = baseCanvas.width;
+        finalCanvas.height = baseCanvas.height;
         const ctx = finalCanvas.getContext('2d');
 
-        ctx.drawImage(img, 0, 0);
+        // Aplicar el filtro de brillo al guardar la imagen base
+        const brilloVal = document.getElementById('brightnessSlider').value;
+        ctx.filter = `brightness(${brilloVal}%)`;
+        ctx.drawImage(baseCanvas, 0, 0);
 
+        // Restablecer filtro para dibujar la capa del pincel limpia encima
+        ctx.filter = 'none';
         if (paintCanvas && paintCanvas.style.display !== 'none') {
-          ctx.drawImage(paintCanvas, 0, 0);
+          ctx.drawImage(paintCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
         }
 
         const blob = await new Promise(res => finalCanvas.toBlob(res, 'image/jpeg', 0.95));
