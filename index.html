@@ -152,7 +152,6 @@
       gap: 10px;
       width: 100%;
       max-width: 450px;
-      margin-bottom: 10px;
     }
     .btn-tab {
       flex: 1;
@@ -173,8 +172,8 @@
     .editor-wrapper {
       position: relative;
       width: 100%;
-      max-width: 500px;
-      height: 50vh;
+      max-width: 450px;
+      height: 55vh;
       background: #000;
       display: flex;
       align-items: center;
@@ -201,19 +200,23 @@
       width: 100%;
       max-width: 450px;
       display: none;
-      flex-direction: column;
-      gap: 10px;
     }
-    .tool-panel.active { display: flex; }
+    .tool-panel.active { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px; 
+    }
 
     .color-panel {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: space-around;
       background: #1e1e1e;
       padding: 10px;
       border-radius: 10px;
       border: 1px solid #2a2a2a;
+      width: 100%;
+      box-sizing: border-box;
     }
     input[type="color"] {
       border: none;
@@ -222,6 +225,7 @@
       border-radius: 50%;
       cursor: pointer;
       background: none;
+      vertical-align: middle;
     }
 
     .editor-btns {
@@ -273,9 +277,10 @@
 
   <!-- EDITOR MODAL -->
   <div id="editorModal" class="editor-modal">
+    <!-- PESTAÑAS NAVEGACIÓN -->
     <div class="mode-selector">
-      <button id="tabCrop" class="btn-tab active" onclick="cambiarModo('crop')">✂️ Recortar</button>
-      <button id="tabPaint" class="btn-tab" onclick="cambiarModo('paint')">🎨 Pincel / Tapar Firma</button>
+      <button id="tabCrop" class="btn-tab active" onclick="cambiarModo('crop')">Modo Recortar</button>
+      <button id="tabPaint" class="btn-tab" onclick="cambiarModo('paint')">Modo Pincel</button>
     </div>
 
     <div class="editor-wrapper" id="editorWrapper">
@@ -283,21 +288,23 @@
       <canvas id="paintCanvas"></canvas>
     </div>
 
+    <!-- UNICO BOTÓN DE RECORTE -->
     <div id="panelCrop" class="tool-panel active">
       <button class="btn-action" style="padding: 12px; background: #eab308; color: #000; font-weight: bold; font-size: 0.9rem;" onclick="aplicarRecorte()">Aplicar Recorte</button>
     </div>
 
+    <!-- PANEL DE PINCEL Y COLORES -->
     <div id="panelPaint" class="tool-panel">
       <div class="color-panel">
         <div>
-          <label style="font-size: 0.8rem;">Color:</label>
+          <label style="font-size: 0.8rem; display: block;">Color:</label>
           <input type="color" id="brushColor" value="#000000">
         </div>
         <div>
-          <label style="font-size: 0.8rem;">Grosor:</label>
-          <input type="range" id="brushSize" min="5" max="50" value="20" style="width: 80px;">
+          <label style="font-size: 0.8rem; display: block;">Grosor:</label>
+          <input type="range" id="brushSize" min="2" max="40" value="15" style="width: 80px;">
         </div>
-        <button style="background: #2a2a2a; color: #ef4444; border: 1px solid #ef4444; border-radius: 6px; padding: 5px 10px; cursor: pointer;" onclick="deshacer()">↩️ Deshacer</button>
+        <button style="background: #2a2a2a; color: #ef4444; border: 1px solid #ef4444; border-radius: 6px; padding: 8px 12px; cursor: pointer;" onclick="deshacer()">↩️ Deshacer</button>
       </div>
     </div>
 
@@ -366,7 +373,7 @@
         const actionButtons = isAdmin ? `
           <div class="card-actions">
             <button class="btn-action btn-edit" onclick="renombrar(${index})">✏️ Renombrar</button>
-            <button class="btn-action btn-crop" onclick="abrirEditor(${index})">⚙️ Editar / Tapar Firma</button>
+            <button class="btn-action btn-crop" onclick="abrirEditor(${index})">⚙️ Editar Imagen</button>
             <button class="btn-action btn-delete" onclick="eliminar(${index})">🗑️ Eliminar</button>
           </div>
         ` : '';
