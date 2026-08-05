@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Galería de Pixel Art</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #3498db;
+      margin-bottom: 30px;
+    }
+    .panel-subida {
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
+      margin: 0 auto 30px auto;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      border: 1px solid #333;
+    }
+    .input-titulo {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background-color: #2a2a2a;
+      color: #fff;
+      font-size: 14px;
+    }
+    .btn-subir {
+      background-color: #3498db;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-block;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .btn-subir:hover {
+      background-color: #2980b9;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    #estado-subida {
+      font-size: 13px;
+      color: #aaa;
+      margin-top: 10px;
+    }
+    .galeria-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .tarjeta-arte {
+      background-color: #1e1e1e;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #333;
+      transition: transform 0.2s;
+    }
+    .tarjeta-arte:hover {
+      transform: translateY(-5px);
+    }
+    .tarjeta-arte img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+    .tarjeta-arte p {
+      padding: 12px;
+      margin: 0;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Galería de Pixel Art</h1>
+
+  <div class="panel-subida">
+    <h3 style="margin-top: 0;">Subir nuevo dibujo</h3>
+    <input type="text" id="titulo" class="input-titulo" placeholder="Nombre del personaje / dibujo">
+    <br>
+    <label for="input-galeria" class="btn-subir">
+      📷 Seleccionar de la Galería
+    </label>
+    <input type="file" id="input-galeria" accept="image/*">
+    <p id="estado-subida"></p>
+  </div>
+
+  <div class="galeria-grid" id="galeria">
+    <!-- Aquí irán apareciendo tus dibujos -->
+  </div>
+
+  <script>
+    // Configuración de Cloudinary
+    const CLOUD_NAME = "jazmin-ruiz1507"; 
+    const UPLOAD_PRESET = "galeria_preset"; // Cambia esto por el nombre de tu preset Unsigned de Cloudinary
+
+    const inputGaleria = document.getElementById('input-galeria');
+    const inputTitulo = document.getElementById('titulo');
+    const estadoSubida = document.getElementById('estado-subida');
+    const galeria = document.getElementById('galeria');
+
+    inputGaleria.addEventListener('change', async (e) => {
+      const archivo = e.target.files[0];
+      if (!archivo) return;
+
+      const titulo = inputTitulo.value.trim() || "Dibujo de Pixel Art";
+      estadoSubida.textContent = "Subiendo imagen...";
+
+      const formData = new FormData();
+      formData.append('file', archivo);
+      formData.append('upload_preset', UPLOAD_PRESET);
+
+      try {
+        const respuesta = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await respuesta.json();
+
+        if (data.secure_url) {
+          estadoSubida.textContent = "¡Imagen subida con éxito!";
+          
+          const nuevaTarjeta = document.createElement('div');
+          nuevaTarjeta.className = 'tarjeta-arte';
+          nuevaTarjeta.innerHTML = `
+            <img src="${data.secure_url}" alt="${titulo}">
+            <p>${titulo}</p>
+          `;
+          galeria.prepend(nuevaTarjeta);
+
+          inputTitulo.value = "";
+          inputGaleria.value = "";
+        } else {
+          estadoSubida.textContent = "Error al subir la imagen. Verifica el preset de Cloudinary.";
+        }
+      } catch (error) {
+        console.error(error);
+        estadoSubida.textContent = "Error de conexión al subir.";
+      }
+    });
+  </script>
+
+</body>
+</html>
