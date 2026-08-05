@@ -198,7 +198,7 @@
     .editor-container {
       position: relative;
       width: 100%;
-      height: 52vh;
+      height: 48vh;
       background: #000;
       display: flex;
       align-items: center;
@@ -214,12 +214,13 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      font-size: 2.5rem;
+      font-size: 3rem;
       cursor: move;
       user-select: none;
       touch-action: none;
       z-index: 210;
       transform: translate(-50%, -50%);
+      line-height: 1;
     }
 
     .editor-controls {
@@ -227,7 +228,7 @@
       max-width: 400px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       text-align: center;
     }
 
@@ -235,20 +236,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       background: #1e1e1e;
-      padding: 10px;
+      padding: 8px;
       border-radius: 10px;
       border: 1px solid #2a2a2a;
       flex-wrap: wrap;
     }
     .emoji-btn {
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       background: #2a2a2a;
       border: 1px solid #3d3d3d;
       border-radius: 8px;
       cursor: pointer;
-      padding: 6px 10px;
+      padding: 4px 8px;
       transition: all 0.2s ease;
     }
     .emoji-btn:hover { background: #383838; transform: scale(1.05); }
@@ -259,34 +260,22 @@
       font-weight: bold;
       border: none;
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 6px 10px;
       cursor: pointer;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      font-size: 0.8rem;
     }
-    .btn-emoji-done:hover { background: #00b85c; }
 
     .btn-emoji-clear {
       background: rgba(239, 68, 68, 0.2);
       color: #ef4444;
       border: 1px solid #ef4444;
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 6px 10px;
       cursor: pointer;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.2s ease;
-    }
-    .btn-emoji-clear:hover {
-      background: #ef4444;
-      color: #ffffff;
+      font-size: 0.8rem;
     }
 
-    .editor-controls label { font-size: 0.85rem; color: #ccc; }
+    .editor-controls label { font-size: 0.8rem; color: #ccc; }
     .editor-btns {
       display: flex;
       gap: 10px;
@@ -296,25 +285,24 @@
       background: #3b82f6;
       border: none;
       color: #ffffff;
-      padding: 12px 20px;
+      padding: 10px 15px;
       font-weight: bold;
       border-radius: 8px;
       cursor: pointer;
       flex: 1;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
     .btn-editor-save:hover { background: #2563eb; }
     .btn-editor-cancel {
       background: #2a2a2a;
       border: 1px solid #444;
       color: #fff;
-      padding: 12px 20px;
+      padding: 10px 15px;
       border-radius: 8px;
       cursor: pointer;
       flex: 1;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
-    .btn-editor-cancel:hover { background: #3d3d3d; }
   </style>
 </head>
 <body>
@@ -348,7 +336,7 @@
 
   <!-- Modal Editor de Imagen y Emojis -->
   <div id="editorModal" class="editor-modal">
-    <h3 style="margin: 5px 0;">Editar Imagen & Tapar Firma</h3>
+    <h3 style="margin: 5px 0; font-size: 1.1rem;">Editar Imagen & Tapar Firma</h3>
     <div class="editor-container" id="editorContainer">
       <img id="imageToEdit" src="" alt="Editar">
       <div id="activeEmoji" class="emoji-overlay" style="display:none;">🖤</div>
@@ -356,7 +344,7 @@
     
     <div class="editor-controls">
       <div>
-        <label style="display:block; margin-bottom: 6px;">Selecciona un emoji para cubrir detalles:</label>
+        <label style="display:block; margin-bottom: 4px;">Emojis para cubrir detalles:</label>
         <div class="emoji-palette">
           <button class="emoji-btn" onclick="colocarEmoji('🖤')">🖤</button>
           <button class="emoji-btn" onclick="colocarEmoji('🌸')">🌸</button>
@@ -368,8 +356,15 @@
         </div>
       </div>
 
-      <label>Brillo: <span id="brightnessVal">100%</span></label>
-      <input type="range" id="brightnessRange" min="50" max="200" value="100" oninput="ajustarBrillo(this.value)">
+      <div id="emojiSizeControl" style="display: none;">
+        <label>Tamaño Emoji: <span id="emojiSizeVal">3.0rem</span></label>
+        <input type="range" id="emojiSizeRange" min="1.5" max="8" step="0.2" value="3" oninput="cambiarTamanoEmoji(this.value)">
+      </div>
+
+      <div>
+        <label>Brillo: <span id="brightnessVal">100%</span></label>
+        <input type="range" id="brightnessRange" min="50" max="200" value="100" oninput="ajustarBrillo(this.value)">
+      </div>
       
       <div class="editor-btns">
         <button class="btn-editor-cancel" onclick="cerrarEditor()">Cancelar</button>
@@ -390,6 +385,7 @@
     let indiceEnEdicion = -1;
     let valorBrilloActual = 100;
     let emojiSeleccionado = null;
+    let tamanoEmojiActual = 3.0; // tamaño en rem
 
     // --- MANEJO DE RETROCESO (EVITAR SALIR DE LA PÁGINA) ---
     window.addEventListener("popstate", function (e) {
@@ -405,6 +401,40 @@
 
     function agregarEstadoHistorial() {
       history.pushState({ modalOpen: true }, "");
+    }
+
+    // --- FUNCIÓN DE COMPRESIÓN Y REDIMENSIÓN OPTIMIZADA ---
+    function optimizarEImagen(file, maxDimension = 1000, quality = 0.85) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
     async function obtenerGaleriaNube() {
@@ -475,13 +505,16 @@
       const title = nameInput.value.trim() || "Sin título";
       const file = fileInput.files[0];
 
-      statusMsg.innerText = "Subiendo imagen...";
+      statusMsg.innerText = "Optimizando y subiendo...";
       statusMsg.style.color = "#3b82f6";
 
-      const formData = new FormData();
-      formData.append("image", file);
-
       try {
+        // Redimensionar imagen para velocidad de carga ultra rápida
+        const blobOptimizado = await optimizarEImagen(file, 1000, 0.85);
+
+        const formData = new FormData();
+        formData.append("image", blobOptimizado, "pixelart.jpg");
+
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
           method: "POST",
           body: formData
@@ -497,7 +530,7 @@
 
           nameInput.value = '';
           fileInput.value = '';
-          statusMsg.innerText = "¡Imagen guardada en la nube!";
+          statusMsg.innerText = "¡Imagen guardada ultra rápido!";
           statusMsg.style.color = "#00d26a";
         } else {
           statusMsg.innerText = "Error al subir la imagen.";
@@ -532,7 +565,7 @@
         ` : '';
 
         card.innerHTML = `
-          <img src="${item.url}" alt="${item.title}" onclick="abrirModal('${item.url}', '${item.title}')">
+          <img src="${item.url}" alt="${item.title}" loading="lazy" onclick="abrirModal('${item.url}', '${item.title}')">
           <h3>${item.title}</h3>
           ${actionButtons}
         `;
@@ -571,7 +604,18 @@
       el.style.display = 'block';
       el.style.border = '1px dashed #00d26a';
       emojiSeleccionado = char;
+      
+      document.getElementById('emojiSizeControl').style.display = 'block';
       hacerArrastrable(el);
+    }
+
+    function cambiarTamanoEmoji(val) {
+      tamanoEmojiActual = parseFloat(val);
+      document.getElementById('emojiSizeVal').innerText = val + "rem";
+      const el = document.getElementById('activeEmoji');
+      if (el) {
+        el.style.fontSize = val + "rem";
+      }
     }
 
     function fijarEmoji() {
@@ -586,6 +630,7 @@
       el.style.display = 'none';
       el.style.border = 'none';
       emojiSeleccionado = null;
+      document.getElementById('emojiSizeControl').style.display = 'none';
     }
 
     function hacerArrastrable(el) {
@@ -637,7 +682,7 @@
 
     async function guardarEdicion() {
       if (!cropper || indiceEnEdicion === -1 || !galeriaActual[indiceEnEdicion]) {
-        alert("Ocurrió un problema con el índice de la imagen a editar.");
+        alert("Ocurrió un problema con la imagen a editar.");
         return;
       }
 
@@ -646,10 +691,13 @@
       btnSave.disabled = true;
 
       try {
-        const croppedCanvas = cropper.getCroppedCanvas();
-        if (!croppedCanvas) {
-          throw new Error("No se pudo obtener el recorte de la imagen.");
-        }
+        // Redimensionar el recortado a un máximo de 1000px para guardar super rápido
+        const croppedCanvas = cropper.getCroppedCanvas({
+          maxWidth: 1000,
+          maxHeight: 1000
+        });
+
+        if (!croppedCanvas) throw new Error("No se pudo obtener el recorte.");
         
         const finalCanvas = document.createElement('canvas');
         finalCanvas.width = croppedCanvas.width;
@@ -658,7 +706,6 @@
         
         ctx.filter = `brightness(${valorBrilloActual}%)`;
         ctx.drawImage(croppedCanvas, 0, 0);
-        
         ctx.filter = 'none';
 
         const activeEmoji = document.getElementById('activeEmoji');
@@ -669,20 +716,21 @@
           const relativeX = (emojiRect.left + emojiRect.width / 2 - containerRect.left) / containerRect.width;
           const relativeY = (emojiRect.top + emojiRect.height / 2 - containerRect.top) / containerRect.height;
 
-          ctx.font = `${finalCanvas.width * 0.12}px sans-serif`;
+          // Escalar emoji según su tamaño relativo configurado
+          const emojiPxSize = (finalCanvas.width * (tamanoEmojiActual * 0.04));
+
+          ctx.font = `${emojiPxSize}px sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(emojiSeleccionado, finalCanvas.width * relativeX, finalCanvas.height * relativeY);
         }
 
-        const blob = await new Promise((resolve, reject) => {
-          finalCanvas.toBlob((b) => {
-            if (b) { resolve(b); } else { reject(new Error("Error al convertir imagen.")); }
-          }, 'image/png');
+        const blob = await new Promise((resolve) => {
+          finalCanvas.toBlob((b) => resolve(b), 'image/jpeg', 0.85);
         });
 
         const formData = new FormData();
-        formData.append("image", blob, "pixelart_editado.png");
+        formData.append("image", blob, "pixelart_editado.jpg");
 
         const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
           method: "POST",
@@ -699,11 +747,10 @@
           await guardarGaleriaNube(copiaGaleria);
           cerrarEditor();
         } else {
-          console.error("Error API ImgBB:", data);
-          throw new Error("La API de ImgBB respondió con error.");
+          throw new Error("La API respondió con error.");
         }
       } catch (err) {
-        console.error("Error completo al guardar:", err);
+        console.error("Error al guardar:", err);
         alert(`Error al guardar: ${err.message || "Error de conexión"}`);
       } finally {
         btnSave.innerText = "Guardar Imagen";
