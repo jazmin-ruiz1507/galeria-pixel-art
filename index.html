@@ -21,7 +21,6 @@
       overflow-x: hidden;
     }
     
-    /* Barra de Administración */
     .admin-bar {
       width: 100%;
       max-width: 800px;
@@ -42,7 +41,6 @@
 
     h1 { color: #3b82f6; margin-top: 0; font-size: 1.6rem; }
     
-    /* Formulario de Subida */
     .card-form {
       display: none;
       background: #1e1e1e;
@@ -76,7 +74,6 @@
     }
     .btn-upload:hover { background-color: #2580d0; }
 
-    /* Galería Grid */
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -133,7 +130,7 @@
     .btn-delete { border-color: #ef4444; }
     .btn-delete:hover { background-color: #ef4444; color: #ffffff; }
 
-    /* Editor Modal */
+    /* EDITOR MODAL */
     .editor-modal {
       display: none;
       position: fixed;
@@ -173,7 +170,7 @@
       border-color: #3b82f6;
     }
 
-    .editor-container {
+    .editor-wrapper {
       position: relative;
       width: 100%;
       max-width: 500px;
@@ -185,17 +182,16 @@
       border-radius: 8px;
       overflow: hidden;
     }
-    .editor-container img {
+
+    #imageToEdit {
       max-width: 100%;
       max-height: 100%;
       display: block;
     }
 
-    .paint-canvas {
+    #paintCanvas {
       position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 100;
+      z-index: 150;
       touch-action: none;
       cursor: crosshair;
       display: none;
@@ -257,14 +253,12 @@
 </head>
 <body>
 
-  <!-- BARRA MODO ADMIN -->
   <div class="admin-bar">
     <button class="btn-admin-toggle" onclick="toggleAdminMode()" id="adminBtn">🔐 Modo Admin</button>
   </div>
 
   <h1>Galería de Pixel Art</h1>
 
-  <!-- FORMULARIO SUBIR IMAGEN (MODO ADMIN) -->
   <div class="card-form" id="uploadForm">
     <h2>Subir nuevo dibujo</h2>
     <input type="text" id="nameInput" placeholder="Nombre del personaje / dibujo">
@@ -284,17 +278,15 @@
       <button id="tabPaint" class="btn-tab" onclick="cambiarModo('paint')">🎨 Pincel / Tapar Firma</button>
     </div>
 
-    <div class="editor-container" id="editorContainer">
+    <div class="editor-wrapper" id="editorWrapper">
       <img id="imageToEdit" src="" alt="Editar">
-      <canvas id="paintCanvas" class="paint-canvas"></canvas>
+      <canvas id="paintCanvas"></canvas>
     </div>
 
-    <!-- PANEL 1: RECORTE -->
     <div id="panelCrop" class="tool-panel active">
-      <button class="btn-action" style="padding: 12px; background: #eab308; color: #000; font-weight: bold;" onclick="aplicarRecorte()">Aplicar Recorte Área Seleccionada</button>
+      <button class="btn-action" style="padding: 12px; background: #eab308; color: #000; font-weight: bold; font-size: 0.9rem;" onclick="aplicarRecorte()">Aplicar Recorte</button>
     </div>
 
-    <!-- PANEL 2: PINCEL -->
     <div id="panelPaint" class="tool-panel">
       <div class="color-panel">
         <div>
@@ -328,7 +320,6 @@
     let paintCanvas, paintCtx, isDrawing = false;
     let historyStack = [];
 
-    // CONTROL DEL MODO ADMIN
     function toggleAdminMode() {
       const uploadForm = document.getElementById('uploadForm');
       if (isAdmin) {
@@ -372,11 +363,10 @@
         const card = document.createElement('div');
         card.className = 'gallery-card';
 
-        // Solo se renderizan los botones de acción si el usuario ha ingresado como Admin
         const actionButtons = isAdmin ? `
           <div class="card-actions">
             <button class="btn-action btn-edit" onclick="renombrar(${index})">✏️ Renombrar</button>
-            <button class="btn-action btn-crop" onclick="abrirEditor(${index})">⚙️ Recortar / Tapar Firma</button>
+            <button class="btn-action btn-crop" onclick="abrirEditor(${index})">⚙️ Editar / Tapar Firma</button>
             <button class="btn-action btn-delete" onclick="eliminar(${index})">🗑️ Eliminar</button>
           </div>
         ` : '';
@@ -475,7 +465,11 @@
       if (modo === 'crop') {
         paintCanvas.style.display = "none";
         if (!cropper) {
-          cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.9 });
+          cropper = new Cropper(img, { 
+            viewMode: 1, 
+            autoCropArea: 0.9,
+            zoomable: false
+          });
         }
       } else if (modo === 'paint') {
         if (cropper) {
@@ -486,7 +480,7 @@
           cropper.destroy();
           cropper = null;
         }
-        setTimeout(activarPincel, 150);
+        setTimeout(activarPincel, 100);
       }
     }
 
@@ -502,14 +496,14 @@
 
     function activarPincel() {
       const img = document.getElementById('imageToEdit');
-      const container = document.getElementById('editorContainer');
+      const wrapper = document.getElementById('editorWrapper');
       paintCanvas = document.getElementById('paintCanvas');
 
       const rectImg = img.getBoundingClientRect();
-      const rectContainer = container.getBoundingClientRect();
+      const rectWrapper = wrapper.getBoundingClientRect();
 
-      paintCanvas.style.left = (rectImg.left - rectContainer.left) + "px";
-      paintCanvas.style.top = (rectImg.top - rectContainer.top) + "px";
+      paintCanvas.style.left = (rectImg.left - rectWrapper.left) + "px";
+      paintCanvas.style.top = (rectImg.top - rectWrapper.top) + "px";
       paintCanvas.style.width = rectImg.width + "px";
       paintCanvas.style.height = rectImg.height + "px";
 
