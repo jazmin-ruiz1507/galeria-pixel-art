@@ -124,34 +124,48 @@
     .btn-delete { border: 1px solid #ef4444; }
     .btn-delete:hover { background-color: #ef4444; color: #ffffff; }
 
+    /* --- ESTILO DE PANTALLA COMPLETA EN MODAL --- */
     .modal {
       display: none;
       position: fixed;
       z-index: 100;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.85);
+      width: 100vw;
+      height: 100vh;
+      background-color: #000000;
       justify-content: center;
       align-items: center;
       flex-direction: column;
+      padding: 0;
+      margin: 0;
     }
     .modal img {
-      max-width: 90%;
-      max-height: 80vh;
+      width: 100vw;
+      height: 100vh;
       object-fit: contain;
-      border-radius: 8px;
+      border-radius: 0;
     }
-    .modal-caption { margin-top: 15px; font-size: 1.2rem; color: #fff; }
+    .modal-caption {
+      position: absolute;
+      bottom: 20px;
+      font-size: 1.2rem;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 6px 16px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
     .modal-close {
       position: absolute;
       top: 20px;
-      right: 30px;
-      font-size: 30px;
+      right: 25px;
+      font-size: 35px;
       color: #fff;
       cursor: pointer;
       font-weight: bold;
+      z-index: 101;
+      text-shadow: 0 0 8px rgba(0,0,0,0.8);
     }
   </style>
 </head>
@@ -199,7 +213,6 @@
         });
         const data = await res.json();
         
-        // Si el bin contiene el item de prueba inicial, lo filtramos si no es una imagen real
         let datos = data.record || [];
         if (Array.isArray(datos)) {
           galeriaActual = datos.filter(item => item.url && !item.url.includes("sample.jpg"));
