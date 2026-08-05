@@ -99,6 +99,11 @@
       object-fit: contain;
       background: #000;
       border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .gallery-card img:hover {
+      transform: scale(1.02);
     }
     .gallery-card h3 {
       font-size: 0.9rem;
@@ -121,6 +126,47 @@
       font-weight: 500;
       color: #e5e5e5;
       border: 1px solid #444;
+    }
+
+    /* VISOR VISTA PREVIA (IMAGEN GRANDE) */
+    .preview-modal {
+      display: none;
+      position: fixed;
+      z-index: 300;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .preview-modal img {
+      max-width: 95%;
+      max-height: 80vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    }
+    .preview-modal h2 {
+      margin-top: 15px;
+      font-size: 1.2rem;
+      color: #fff;
+    }
+    .btn-close-preview {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #555;
+      font-size: 1.2rem;
+      padding: 5px 12px;
+      border-radius: 50%;
+      cursor: pointer;
     }
 
     /* EDITOR MODAL */
@@ -284,6 +330,13 @@
 
   <div class="gallery-grid" id="galleryGrid">Cargando galería...</div>
 
+  <!-- MODAL VISTA PREVIA (IMAGEN GRANDE) -->
+  <div id="previewModal" class="preview-modal" onclick="cerrarVistaPrevia()">
+    <button class="btn-close-preview" onclick="cerrarVistaPrevia()">✕</button>
+    <img id="previewImg" src="" alt="Vista Previa" onclick="event.stopPropagation()">
+    <h2 id="previewTitle"></h2>
+  </div>
+
   <!-- EDITOR MODAL -->
   <div id="editorModal" class="editor-modal">
     <div class="mode-selector">
@@ -296,9 +349,8 @@
       <canvas id="paintCanvas"></canvas>
     </div>
 
-    <!-- PANEL ÚNICO Y DINÁMICO DE HERRAMIENTAS -->
     <div class="tool-panel">
-      <!-- CONTROL DE BRILLO COMPARTIDO -->
+      <!-- CONTROL DE BRILLO -->
       <div class="slider-container">
         <label for="brightnessSlider">☀️ Brillo:</label>
         <input type="range" id="brightnessSlider" min="50" max="150" value="100" oninput="actualizarBrillo()">
@@ -401,12 +453,26 @@
         ` : '';
 
         card.innerHTML = `
-          <img src="${item.url}" alt="${item.title}">
+          <img src="${item.url}" alt="${item.title}" onclick="abrirVistaPrevia(${index})">
           <h3>${item.title}</h3>
           ${actionButtons}
         `;
         grid.appendChild(card);
       });
+    }
+
+    function abrirVistaPrevia(index) {
+      const modal = document.getElementById('previewModal');
+      const img = document.getElementById('previewImg');
+      const title = document.getElementById('previewTitle');
+
+      img.src = galeriaActual[index].url;
+      title.innerText = galeriaActual[index].title;
+      modal.style.display = "flex";
+    }
+
+    function cerrarVistaPrevia() {
+      document.getElementById('previewModal').style.display = "none";
     }
 
     async function guardarGaleriaNube(nuevaGaleria) {
@@ -520,7 +586,6 @@
           setTimeout(actualizarBrillo, 50);
         }
       } else if (modo === 'paint') {
-        // Destruir por completo la interfaz de recortar para quitar el recuadro
         if (cropper) {
           cropper.destroy();
           cropper = null;
@@ -650,12 +715,10 @@
         finalCanvas.height = baseCanvas.height;
         const ctx = finalCanvas.getContext('2d');
 
-        // Aplicar el filtro de brillo al guardar la imagen base
         const brilloVal = document.getElementById('brightnessSlider').value;
         ctx.filter = `brightness(${brilloVal}%)`;
         ctx.drawImage(baseCanvas, 0, 0);
 
-        // Restablecer filtro para dibujar la capa del pincel limpia encima
         ctx.filter = 'none';
         if (paintCanvas && paintCanvas.style.display !== 'none') {
           ctx.drawImage(paintCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
