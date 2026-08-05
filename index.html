@@ -520,15 +520,12 @@
           setTimeout(actualizarBrillo, 50);
         }
       } else if (modo === 'paint') {
+        // Destruir por completo la interfaz de recortar para quitar el recuadro
         if (cropper) {
-          const croppedCanvas = cropper.getCroppedCanvas();
-          if (croppedCanvas) {
-            img.src = croppedCanvas.toDataURL('image/jpeg');
-          }
           cropper.destroy();
           cropper = null;
         }
-        setTimeout(activarPincel, 150);
+        setTimeout(activarPincel, 100);
       }
     }
 
