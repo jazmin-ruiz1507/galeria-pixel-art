@@ -103,7 +103,6 @@
       object-fit: contain;
       background: #000;
       border-radius: 6px;
-      cursor: pointer;
     }
     .gallery-card h3 {
       font-size: 0.9rem;
@@ -295,7 +294,7 @@
       <button class="btn-action" style="padding: 12px; background: #eab308; color: #000; font-weight: bold;" onclick="aplicarRecorte()">Aplicar Recorte Área Seleccionada</button>
     </div>
 
-    <!-- PANEL 2: PINCEL (APARTE) -->
+    <!-- PANEL 2: PINCEL -->
     <div id="panelPaint" class="tool-panel">
       <div class="color-panel">
         <div>
@@ -373,6 +372,7 @@
         const card = document.createElement('div');
         card.className = 'gallery-card';
 
+        // Solo se renderizan los botones de acción si el usuario ha ingresado como Admin
         const actionButtons = isAdmin ? `
           <div class="card-actions">
             <button class="btn-action btn-edit" onclick="renombrar(${index})">✏️ Renombrar</button>
