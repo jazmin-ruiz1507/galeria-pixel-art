@@ -231,7 +231,6 @@
       text-align: center;
     }
 
-    /* Paleta de Emojis y Botones Rediseñados */
     .emoji-palette {
       display: flex;
       align-items: center;
@@ -559,11 +558,7 @@
     }
 
     function fijarEmoji() {
-      const el = document.getElementById('activeEmoji');
-      if (emojiSeleccionado) {
-        el.style.border = 'none';
-        alert("Emoji fijado en esta posición.");
-      }
+      guardarEdicion();
     }
 
     function quitarEmoji() {
@@ -624,60 +619,70 @@
       btnSave.innerText = "Guardando...";
       btnSave.disabled = true;
 
-      const croppedCanvas = cropper.getCroppedCanvas();
-      
-      const finalCanvas = document.createElement('canvas');
-      finalCanvas.width = croppedCanvas.width;
-      finalCanvas.height = croppedCanvas.height;
-      const ctx = finalCanvas.getContext('2d');
-      
-      ctx.filter = `brightness(${valorBrilloActual}%)`;
-      ctx.drawImage(croppedCanvas, 0, 0);
-
-      const activeEmoji = document.getElementById('activeEmoji');
-      if (emojiSeleccionado && activeEmoji.style.display !== 'none') {
-        const containerRect = document.getElementById('editorContainer').getBoundingClientRect();
-        const emojiRect = activeEmoji.getBoundingClientRect();
-
-        const relativeX = (emojiRect.left - containerRect.left) / containerRect.width;
-        const relativeY = (emojiRect.top - containerRect.top) / containerRect.height;
-
-        ctx.filter = 'none';
-        ctx.font = `${finalCanvas.width * 0.12}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(emojiSeleccionado, finalCanvas.width * relativeX, finalCanvas.height * relativeY);
-      }
-
-      finalCanvas.toBlob(async (blob) => {
-        const formData = new FormData();
-        formData.append("image", blob, "edited_image.png");
-
-        try {
-          const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-            method: "POST",
-            body: formData
-          });
-
-          const data = await res.json();
-          if (data.success) {
-            const nuevaUrl = data.data.url;
-            const copia = [...galeriaActual];
-            copia[indiceEnEdicion].url = nuevaUrl;
-
-            await guardarGaleriaNube(copia);
-            cerrarEditor();
-          } else {
-            alert("Error al guardar la nueva imagen.");
-          }
-        } catch (err) {
-          console.error(err);
-          alert("Error de conexión al guardar.");
-        } finally {
-          btnSave.innerText = "Guardar Imagen";
-          btnSave.disabled = false;
+      try {
+        const croppedCanvas = cropper.getCroppedCanvas();
+        if (!croppedCanvas) {
+          throw new Error("No se pudo obtener el recorte de la imagen.");
         }
-      }, 'image/png');
+        
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = croppedCanvas.width;
+        finalCanvas.height = croppedCanvas.height;
+        const ctx = finalCanvas.getContext('2d');
+        
+        ctx.filter = `brightness(${valorBrilloActual}%)`;
+        ctx.drawImage(croppedCanvas, 0, 0);
+        
+        ctx.filter = 'none';
+
+        const activeEmoji = document.getElementById('activeEmoji');
+        if (emojiSeleccionado && activeEmoji.style.display !== 'none') {
+          const containerRect = document.getElementById('editorContainer').getBoundingClientRect();
+          const emojiRect = activeEmoji.getBoundingClientRect();
+
+          const relativeX = (emojiRect.left + emojiRect.width / 2 - containerRect.left) / containerRect.width;
+          const relativeY = (emojiRect.top + emojiRect.height / 2 - containerRect.top) / containerRect.height;
+
+          ctx.font = `${finalCanvas.width * 0.12}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(emojiSeleccionado, finalCanvas.width * relativeX, finalCanvas.height * relativeY);
+        }
+
+        const blob = await new Promise((resolve, reject) => {
+          finalCanvas.toBlob((b) => {
+            if (b) { resolve(b); } else { reject(new Error("Error al convertir imagen.")); }
+          }, 'image/png');
+        });
+
+        const formData = new FormData();
+        formData.append("image", blob, "pixelart_editado.png");
+
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+        
+        if (data.success) {
+          const nuevaUrl = data.data.url;
+          const copiaGaleria = [...galeriaActual];
+          copiaGaleria[indiceEnEdicion].url = nuevaUrl;
+
+          await guardarGaleriaNube(copiaGaleria);
+          cerrarEditor();
+        } else {
+          console.error("Error API ImgBB:", data);
+          throw new Error("La API de ImgBB respondió con error.");
+        }
+      } catch (err) {
+        console.error("Error completo al guardar:", err);
+        alert(`Error al guardar: ${err.message || "Error de conexión"}`);
+      } finally {
+        btnSave.innerText = "Guardar Imagen";
+        btnSave.disabled = false;
+      }
     }
 
     async function editarTitulo(index) {
