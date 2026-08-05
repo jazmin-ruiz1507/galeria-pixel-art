@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Galería de Pixel Art</title>
   
-  <!-- Estilos e librería de Cropper.js (NECESARIO ESTAR EN ESTE ORDEN) -->
+  <!-- Estilos e librería de Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
@@ -149,14 +149,11 @@
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      padding: 0;
-      margin: 0;
     }
     .modal img {
       width: 100vw;
       height: 100vh;
       object-fit: contain;
-      border-radius: 0;
     }
     .modal-caption {
       position: absolute;
@@ -166,7 +163,6 @@
       background: rgba(0, 0, 0, 0.7);
       padding: 6px 16px;
       border-radius: 20px;
-      backdrop-filter: blur(4px);
     }
     .modal-close {
       position: absolute;
@@ -177,10 +173,9 @@
       cursor: pointer;
       font-weight: bold;
       z-index: 101;
-      text-shadow: 0 0 8px rgba(0,0,0,0.8);
     }
 
-    /* --- MODAL EDITOR DE IMAGEN Y PINTADO (CORREGIDO) --- */
+    /* --- MODAL EDITOR Y PINTADO --- */
     .editor-modal {
       display: none;
       position: fixed;
@@ -208,30 +203,21 @@
       border-radius: 8px;
     }
     
-    /* CORRECCIÓN: Asegurar que la imagen original no tape los controles */
     .editor-container img {
       max-width: 100%;
       max-height: 100%;
-      position: relative;
-      z-index: 10; /* Base */
+      display: block;
     }
 
-    /* CORRECCIÓN: Lienzo de pintura por encima de la imagen negra */
+    /* CANVAS DE DIBUJO CAPA SUPERIOR */
     .paint-canvas {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 30; /* Por encima de todo para pintar */
+      z-index: 50;
       touch-action: none;
       display: none;
       cursor: crosshair;
-    }
-
-    /* CORRECCIÓN: El visor de Cropper debe estar entre la imagen negra y el lienzo */
-    .cropper-container {
-      z-index: 20 !important;
     }
 
     .editor-controls {
@@ -254,8 +240,6 @@
       cursor: pointer;
       font-size: 0.9rem;
       width: 100%;
-      transition: background 0.2s;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .btn-do-crop:hover { background: #ca8a04; color: #fff; }
 
@@ -285,7 +269,7 @@
       padding: 0;
     }
     input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-    input[type="color"]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
+    input[type="color"]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; }
 
     .btn-undo, .btn-clear-paint {
       background: #2a2a2a;
@@ -295,13 +279,12 @@
       padding: 6px 12px;
       cursor: pointer;
       font-size: 0.85rem;
-      transition: all 0.2s;
     }
     .btn-undo:hover { background: #ef4444; color: #fff; }
     .btn-clear-paint { color: #aaa; border-color: #444; }
     .btn-clear-paint:hover { background: #444; color: #fff; }
 
-    .editor-controls label { font-size: 0.85rem; color: #ccc; font-weight: 500; }
+    .editor-controls label { font-size: 0.85rem; color: #ccc; }
     
     .editor-btns {
       display: flex;
@@ -318,8 +301,6 @@
       border-radius: 10px;
       cursor: pointer;
       flex: 1;
-      font-size: 0.95rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .btn-editor-save:hover { background: #2563eb; }
     .btn-editor-cancel {
@@ -330,15 +311,8 @@
       border-radius: 10px;
       cursor: pointer;
       flex: 1;
-      font-size: 0.95rem;
     }
     .btn-editor-cancel:hover { background: #3d3d3d; }
-
-    /* Mobile specific tweaks */
-    @media (max-width: 600px) {
-      .editor-container { height: 40vh; }
-      .color-panel { flex-wrap: wrap; justify-content: center; gap: 10px; }
-    }
   </style>
 </head>
 <body>
@@ -379,18 +353,18 @@
     </div>
     
     <div class="editor-controls">
-      <!-- Botón de Acción Recortar -->
+      <!-- Botón para Recortar -->
       <button class="btn-do-crop" id="btnCrop" onclick="aplicarRecorteManual()">✂️ Recortar Imagen Selección</button>
 
-      <!-- Herramienta de Pincel de Color -->
+      <!-- Panel del Pincel -->
       <div id="paintTools" class="color-panel" style="display: none;">
         <div class="color-picker-wrapper">
           <label>Color:</label>
-          <input type="color" id="brushColor" value="#121212">
+          <input type="color" id="brushColor" value="#000000">
         </div>
         <div>
           <label>Grosor:</label>
-          <input type="range" id="brushSize" min="5" max="50" value="20" style="width: 90px; vertical-align: middle;">
+          <input type="range" id="brushSize" min="5" max="50" value="20" style="width: 80px;">
         </div>
         <div style="display: flex; gap: 5px;">
             <button class="btn-undo" onclick="deshacerPintura()">↩️ Deshacer</button>
@@ -428,73 +402,17 @@
     let isDrawing = false;
     let historyStack = [];
 
-    // --- MANEJO DE RETROCESO ---
-    window.addEventListener("popstate", function (e) {
-      const editorModal = document.getElementById('editorModal');
-      const imageModal = document.getElementById('imageModal');
-
-      if (editorModal.style.display === "flex") {
-        cerrarEditor(false);
-      } else if (imageModal.style.display === "flex") {
-        cerrarModal(false);
-      }
-    });
-
-    function agregarEstadoHistorial() {
-      history.pushState({ modalOpen: true }, "");
-    }
-
-    function optimizarEImagen(file, maxDimension = 1200, quality = 0.9) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            let width = img.width;
-            let height = img.height;
-
-            if (width > maxDimension || height > maxDimension) {
-              if (width > height) {
-                height = Math.round((height * maxDimension) / width);
-                width = maxDimension;
-              } else {
-                width = Math.round((width * maxDimension) / height);
-                height = maxDimension;
-              }
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
     async function obtenerGaleriaNube() {
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
           headers: { "X-Master-Key": JSONBIN_MASTER_KEY }
         });
         const data = await res.json();
-        
         let datos = data.record || [];
-        if (Array.isArray(datos)) {
-          galeriaActual = datos.filter(item => item.url && !item.url.includes("sample.jpg"));
-        } else {
-          galeriaActual = [];
-        }
-
+        galeriaActual = Array.isArray(datos) ? datos.filter(item => item.url && !item.url.includes("sample.jpg")) : [];
         cargarGaleriaUI();
       } catch (err) {
         console.error("Error al obtener datos:", err);
-        document.getElementById('galleryGrid').innerText = "Error al cargar la galería.";
       }
     }
 
@@ -534,60 +452,12 @@
       cargarGaleriaUI();
     }
 
-    async function subirImagen() {
-      if (!isAdmin) return;
-      const nameInput = document.getElementById('nameInput');
-      const fileInput = document.getElementById('fileInput');
-      const statusMsg = document.getElementById('statusMsg');
-
-      if (!fileInput.files[0]) return;
-
-      const title = nameInput.value.trim() || "Sin título";
-      const file = fileInput.files[0];
-
-      statusMsg.innerText = "Optimizando y subiendo...";
-      statusMsg.style.color = "#3b82f6";
-
-      try {
-        const blobOptimizado = await optimizarEImagen(file, 1200, 0.9);
-
-        const formData = new FormData();
-        formData.append("image", blobOptimizado, "pixelart.jpg");
-
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-          method: "POST",
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          const imageUrl = data.data.url;
-          const nuevaLista = [{ id: Date.now(), title: title, url: imageUrl }, ...galeriaActual];
-          
-          await guardarGaleriaNube(nuevaLista);
-
-          nameInput.value = '';
-          fileInput.value = '';
-          statusMsg.innerText = "¡Imagen guardada ultra rápido!";
-          statusMsg.style.color = "#00d26a";
-        } else {
-          statusMsg.innerText = "Error al subir la imagen.";
-          statusMsg.style.color = "#ff4d4d";
-        }
-      } catch (error) {
-        console.error(error);
-        statusMsg.innerText = "Error de conexión.";
-        statusMsg.style.color = "#ff4d4d";
-      }
-    }
-
     function cargarGaleriaUI() {
       const galleryGrid = document.getElementById('galleryGrid');
       galleryGrid.innerHTML = '';
 
       if (galeriaActual.length === 0) {
-        galleryGrid.innerHTML = '<p style="grid-column: 1/-1; color: #888; margin-top: 20px;">No hay imágenes cargadas aún.</p>';
+        galleryGrid.innerHTML = '<p style="grid-column: 1/-1; color: #888;">No hay imágenes cargadas aún.</p>';
         return;
       }
 
@@ -612,7 +482,7 @@
       });
     }
 
-    /* --- EDITOR DE IMAGEN Y HERRAMIENTA DE PINCEL DE COLOR --- */
+    /* --- EDITOR & HERRAMIENTAS --- */
     function abrirEditor(index) {
       if (!isAdmin) return;
       indiceEnEdicion = index;
@@ -620,158 +490,133 @@
       
       const imageToEdit = document.getElementById('imageToEdit');
       const editorModal = document.getElementById('editorModal');
-      const brightnessRange = document.getElementById('brightnessRange');
       
-      // Reiniciar interfaz
-      brightnessRange.value = 100;
+      document.getElementById('brightnessRange').value = 100;
       document.getElementById('brightnessVal').innerText = "100%";
       document.getElementById('paintTools').style.display = "none";
       document.getElementById('btnCrop').style.display = "block";
-      document.getElementById('btnCrop').disabled = false;
-      document.getElementById('btnSaveEdit').disabled = false;
-      
-      const canvas = document.getElementById('paintCanvas');
-      canvas.style.display = "none";
+      document.getElementById('paintCanvas').style.display = "none";
 
       valorBrilloActual = 100;
       historyStack = [];
-      imageToEdit.style.filter = "none"; // Quitar filtros previos
+      imageToEdit.style.filter = "none";
 
-      // Mostrar modal
       editorModal.style.display = "flex";
-      agregarEstadoHistorial();
 
-      // Cargar imagen y esperar a que esté lista para inicializar Cropper
-      imageToEdit.onload = function() {
-          // CORRECCIÓN: Asegurar que la imagen tenga dimensiones cargadas antes de iniciar cropper
-          if (this.complete && this.naturalWidth > 0) {
-              inicializarCropper(this);
-          }
-      };
-      
-      // Si la imagen ya estaba en caché, forzar el onload
-      if (imageToEdit.complete) {
-          imageToEdit.onload();
-      }
-      
-      imageToEdit.src = item.url;
       imageToEdit.crossOrigin = "anonymous";
-    }
-
-    function inicializarCropper(imageElement) {
+      imageToEdit.src = item.url;
+      
+      imageToEdit.onload = function() {
         if (cropper) { cropper.destroy(); }
-        // CORRECCIÓN: Configuración óptima para Cropper.js en móviles
-        cropper = new Cropper(imageElement, {
-          viewMode: 1, // Restringir el recuadro dentro de la imagen
-          autoCropArea: 0.9, // Iniciar cubriendo el 90%
+        cropper = new Cropper(imageToEdit, {
+          viewMode: 1,
+          autoCropArea: 0.9,
           responsive: true,
-          restore: false,
-          guides: true,
-          center: true,
-          highlight: false,
-          cropBoxMovable: true,
-          cropBoxResizable: true,
-          toggleDragModeOnDblclick: false,
-          ready: function() {
-              // Asegurar que el botón de recortar esté activo una vez cargado
-              document.getElementById('btnCrop').disabled = false;
-          }
+          restore: false
         });
+      };
     }
 
-    // --- APLICAR RECORTE Y ACTIVAR MODO PINCEL ---
     function aplicarRecorteManual() {
-      if (!cropper) {
-          alert("El recortador no se ha cargado correctamente. Intenta abrir el editor de nuevo.");
-          return;
-      }
-      
-      const canvasCortado = cropper.getCroppedCanvas({
-          maxWidth: 1200, // Limitar tamaño máximo para mejor rendimiento
-          maxHeight: 1200
-      });
-      
-      if (!canvasCortado) {
-          alert("Hubo un error al generar el recorte. Intenta de nuevo.");
-          return;
-      }
+      if (!cropper) return;
+
+      const canvasCortado = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200 });
+      if (!canvasCortado) return;
 
       const imageToEdit = document.getElementById('imageToEdit');
-      const cropButton = document.getElementById('btnCrop');
-      const paintTools = document.getElementById('paintTools');
       
-      cropButton.disabled = true; // Desactivar temporalmente
+      // Destruir completamente Cropper antes de pasar a modo dibujo
+      cropper.destroy();
+      cropper = null;
 
-      // Reemplazar la imagen mostrada por la versión recortada
-      imageToEdit.onload = function() {
-          // Una vez cargada la nueva imagen, ocultar recortador y mostrar pincel
-          this.onload = null; // Quitar este handler
-          
-          if (cropper) {
-              cropper.destroy();
-              cropper = null;
-          }
-          
-          cropButton.style.display = "none";
-          paintTools.style.display = "flex";
-
-          // Habilitar lienzo transparente encima para pintar (esperar un poco para renderizado)
-          setTimeout(inicializarLienzoPintura, 150);
-      };
-      
       imageToEdit.src = canvasCortado.toDataURL('image/jpeg', 0.95);
+      
+      imageToEdit.onload = function() {
+        document.getElementById('btnCrop').style.display = "none";
+        document.getElementById('paintTools').style.display = "flex";
+
+        // Inicializar el lienzo de dibujo sobre la imagen
+        setTimeout(configurarLienzoPintura, 100);
+      };
     }
 
-    function inicializarLienzoPintura() {
+    function configurarLienzoPintura() {
       paintCanvas = document.getElementById('paintCanvas');
       const img = document.getElementById('imageToEdit');
+      const container = document.getElementById('editorContainer');
 
-      // CORRECCIÓN: Asegurar que el lienzo coincida EXACTAMENTE con el tamaño VISIBLE de la imagen negra
-      paintCanvas.width = img.clientWidth;
-      paintCanvas.height = img.clientHeight;
+      // Obtener posición y dimensión exacta de la imagen renderizada en pantalla
+      const rectImg = img.getBoundingClientRect();
+      const rectContainer = container.getBoundingClientRect();
+
+      // Ajustar posición del canvas alineado a la imagen
+      paintCanvas.style.left = (rectImg.left - rectContainer.left) + "px";
+      paintCanvas.style.top = (rectImg.top - rectContainer.top) + "px";
+      paintCanvas.style.width = rectImg.width + "px";
+      paintCanvas.style.height = rectImg.height + "px";
+
+      // Tamaño de renderizado interno de la imagen real
+      paintCanvas.width = img.naturalWidth || rectImg.width;
+      paintCanvas.height = img.naturalHeight || rectImg.height;
+
       paintCanvas.style.display = "block";
-      paintCanvas.style.pointerEvents = "auto"; // Asegurar que reciba clicks
-
       paintCtx = paintCanvas.getContext('2d');
       paintCtx.lineCap = 'round';
       paintCtx.lineJoin = 'round';
 
-      historyStack = []; // Reiniciar historial al recortar
+      historyStack = [];
       guardarEstadoPintura();
 
-      // Eventos de dibujo (Soportando punteros y táctil)
-      paintCanvas.onpointerdown = empezarDibujo;
-      paintCanvas.onpointermove = dibujar;
-      paintCanvas.onpointerup = detenerDibujo;
-      paintCanvas.onpointerleave = detenerDibujo; // Parar si sale del canvas
+      // Registrar Eventos del ratón y pantalla táctil
+      paintCanvas.onmousedown = empezarDibujo;
+      paintCanvas.onmousemove = dibujar;
+      paintCanvas.onmouseup = detenerDibujo;
+      paintCanvas.onmouseleave = detenerDibujo;
+
+      paintCanvas.ontouchstart = (e) => { empezarDibujo(e.touches[0]); };
+      paintCanvas.ontouchmove = (e) => { 
+        e.preventDefault(); 
+        dibujar(e.touches[0]); 
+      };
+      paintCanvas.ontouchend = detenerDibujo;
+    }
+
+    function obtenerPosicionCoords(e) {
+      const rect = paintCanvas.getBoundingClientRect();
+      const scaleX = paintCanvas.width / rect.width;
+      const scaleY = paintCanvas.height / rect.height;
+
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
     }
 
     function empezarDibujo(e) {
-      if (e.button !== 0 && e.pointerType === "mouse") return; // Solo click izquierdo
       isDrawing = true;
       paintCtx.beginPath();
-      const rect = paintCanvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      paintCtx.moveTo(x, y);
+      const pos = obtenerPosicionCoords(e);
+      paintCtx.moveTo(pos.x, pos.y);
       
-      // Dibujar un punto inicial para clicks rápidos
+      // Dibujar un trazo/punto inicial
       const color = document.getElementById('brushColor').value;
       const size = document.getElementById('brushSize').value;
       paintCtx.fillStyle = color;
-      paintCtx.fillRect(x - size/4, y - size/4, size/2, size/2);
+      paintCtx.arc(pos.x, pos.y, size / 2, 0, Math.PI * 2);
+      paintCtx.fill();
+      paintCtx.beginPath();
+      paintCtx.moveTo(pos.x, pos.y);
     }
 
     function dibujar(e) {
       if (!isDrawing) return;
-      e.preventDefault(); // Evitar scroll en móviles al dibujar
-      const rect = paintCanvas.getBoundingClientRect();
+      const pos = obtenerPosicionCoords(e);
       const color = document.getElementById('brushColor').value;
       const size = document.getElementById('brushSize').value;
 
       paintCtx.strokeStyle = color;
       paintCtx.lineWidth = size;
-      paintCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      paintCtx.lineTo(pos.x, pos.y);
       paintCtx.stroke();
     }
 
@@ -785,65 +630,41 @@
 
     function guardarEstadoPintura() {
       if (!paintCtx) return;
-      // Guardar instantánea del lienzo para deshacer
       historyStack.push(paintCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height));
-      // Limitar historial para ahorrar memoria
       if (historyStack.length > 15) historyStack.shift();
     }
 
     function deshacerPintura() {
       if (historyStack.length > 1) {
-        historyStack.pop(); // Quitar estado actual
-        const prev = historyStack[historyStack.length - 1]; // Obtener previo
+        historyStack.pop();
+        const prev = historyStack[historyStack.length - 1];
         paintCtx.putImageData(prev, 0, 0);
       }
     }
     
     function limpiarPintura() {
-        if (paintCtx && paintCanvas) {
-            paintCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
-            historyStack = [];
-            guardarEstadoPintura(); // Guardar estado vacío inicial
-        }
+      if (paintCtx && paintCanvas) {
+        paintCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+        historyStack = [];
+        guardarEstadoPintura();
+      }
     }
 
     function ajustarBrillo(val) {
       valorBrilloActual = val;
       document.getElementById('brightnessVal').innerText = val + "%";
       const img = document.getElementById('imageToEdit');
-      
-      // Aplicar filtro CSS visualmente
-      if (cropper) {
-          // Si cropper está activo, aplicar filtro al contenedor de cropper
-          const container = document.querySelector('.cropper-container');
-          if (container) container.style.filter = `brightness(${val}%)`;
-      } else if (img) {
-          // Si estamos pintando, aplicar filtro a la imagen negra
-          img.style.filter = `brightness(${val}%)`;
-      }
+      if (img) img.style.filter = `brightness(${val}%)`;
     }
 
-    function cerrarEditor(backInHistory = true) {
+    function cerrarEditor() {
       if (cropper) { cropper.destroy(); cropper = null; }
       document.getElementById('editorModal').style.display = "none";
       indiceEnEdicion = -1;
-      
-      // Limpiar lienzo pintura
-      if (paintCanvas) {
-          const ctx = paintCanvas.getContext('2d');
-          ctx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
-      }
-
-      if (backInHistory && history.state && history.state.modalOpen) {
-        history.back();
-      }
     }
 
     async function guardarEdicion() {
-      if (indiceEnEdicion === -1 || !galeriaActual[indiceEnEdicion]) {
-        alert("Ocurrió un problema con la imagen a editar.");
-        return;
-      }
+      if (indiceEnEdicion === -1) return;
 
       const btnSave = document.getElementById('btnSaveEdit');
       btnSave.innerText = "Guardando...";
@@ -853,48 +674,36 @@
         let baseCanvas;
 
         if (cropper) {
-          // Si el usuario guardó sin presionar "Recortar manual", usar la selección actual de Cropper
           baseCanvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200 });
         } else {
-          // Si ya se recortó manualmente, usar la imagen mostrada
           const img = document.getElementById('imageToEdit');
           baseCanvas = document.createElement('canvas');
-          baseCanvas.width = img.naturalWidth || img.clientWidth;
-          baseCanvas.height = img.naturalHeight || img.clientHeight;
+          baseCanvas.width = img.naturalWidth;
+          baseCanvas.height = img.naturalHeight;
           const ctx = baseCanvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, baseCanvas.width, baseCanvas.height);
+          ctx.drawImage(img, 0, 0);
         }
-
-        if (!baseCanvas) throw new Error("No se obtuvo la imagen base.");
 
         const finalCanvas = document.createElement('canvas');
         finalCanvas.width = baseCanvas.width;
         finalCanvas.height = baseCanvas.height;
         const ctx = finalCanvas.getContext('2d');
 
-        // 1. Aplicar filtro de Brillo al lienzo final
+        // Aplicar el brillo a la imagen final
         ctx.filter = `brightness(${valorBrilloActual}%)`;
         ctx.drawImage(baseCanvas, 0, 0);
-        ctx.filter = 'none'; // Resetear filtros para lo que sigue
+        ctx.filter = 'none';
 
-        // 2. Fusionar trazos de color dibujados (si existen y estamos en modo pintura)
+        // Unir los trazos dibujados encima
         if (!cropper && paintCanvas && paintCanvas.style.display !== 'none') {
-          // CORRECCIÓN: Dibujar el lienzo de pintura escalándolo correctamente al tamaño real de la imagen negra
           ctx.drawImage(paintCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
         }
 
-        // 3. Convertir a Blob (binario) optimizado
-        const blob = await new Promise((resolve, reject) => {
-          finalCanvas.toBlob((b) => {
-              if (b) resolve(b);
-              else reject(new Error("Error generando el archivo final."));
-          }, 'image/jpeg', 0.9); // Calidad alta pero optimizada
-        });
+        const blob = await new Promise((resolve) => finalCanvas.toBlob(resolve, 'image/jpeg', 0.9));
 
         const formData = new FormData();
         formData.append("image", blob, "pixelart_editado.jpg");
 
-        // 4. Subir a ImgBB
         const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
           method: "POST",
           body: formData
@@ -903,59 +712,30 @@
         const data = await res.json();
 
         if (data.success) {
-          // 5. Actualizar URL en JSONBin
-          const nuevaUrl = data.data.url;
           const copiaGaleria = [...galeriaActual];
-          copiaGaleria[indiceEnEdicion].url = nuevaUrl;
-
+          copiaGaleria[indiceEnEdicion].url = data.data.url;
           await guardarGaleriaNube(copiaGaleria);
           cerrarEditor();
         } else {
-          console.error("Error API ImgBB:", data);
-          throw new Error(data.error ? data.error.message : "Error al subir a la nube.");
+          alert("Error al guardar la imagen.");
         }
       } catch (err) {
-        console.error("Error completo al guardar:", err);
-        alert(`Error al guardar: ${err.message || "Error de conexión"}`);
+        console.error(err);
+        alert("Ocurrió un error al subir la edición.");
       } finally {
         btnSave.innerText = "Guardar Imagen";
         btnSave.disabled = false;
       }
     }
 
-    async function editarTitulo(index) {
-      if (!isAdmin) return;
-      const nuevoTitulo = prompt("Edita el nombre del dibujo:", galeriaActual[index].title);
-      
-      if (nuevoTitulo !== null && nuevoTitulo.trim() !== "") {
-        const copia = [...galeriaActual];
-        copia[index].title = nuevoTitulo.trim();
-        await guardarGaleriaNube(copia);
-      }
-    }
-
-    async function eliminarImagen(index) {
-      if (!isAdmin) return;
-      if (confirm("¿Seguro que quieres eliminar esta imagen?")) {
-        const copia = [...galeriaActual];
-        copia.splice(index, 1);
-        await guardarGaleriaNube(copia);
-      }
-    }
-
     function abrirModal(url, title) {
-      const modal = document.getElementById('imageModal');
       document.getElementById('modalImg').src = url;
       document.getElementById('modalCaption').innerText = title;
-      modal.style.display = "flex";
-      agregarEstadoHistorial();
+      document.getElementById('imageModal').style.display = "flex";
     }
 
-    function cerrarModal(backInHistory = true) {
+    function cerrarModal() {
       document.getElementById('imageModal').style.display = "none";
-      if (backInHistory && history.state && history.state.modalOpen) {
-        history.back();
-      }
     }
 
     document.addEventListener("DOMContentLoaded", obtenerGaleriaNube);
