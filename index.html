@@ -558,7 +558,10 @@
     }
 
     function fijarEmoji() {
-      guardarEdicion();
+      const el = document.getElementById('activeEmoji');
+      if (el && emojiSeleccionado) {
+        el.style.border = 'none'; // Quita el borde punteado para confirmar la ubicación
+      }
     }
 
     function quitarEmoji() {
@@ -613,7 +616,10 @@
     }
 
     async function guardarEdicion() {
-      if (!cropper || indiceEnEdicion === -1) return;
+      if (!cropper || indiceEnEdicion === -1 || !galeriaActual[indiceEnEdicion]) {
+        alert("Ocurrió un problema con el índice de la imagen a editar.");
+        return;
+      }
 
       const btnSave = document.getElementById('btnSaveEdit');
       btnSave.innerText = "Guardando...";
