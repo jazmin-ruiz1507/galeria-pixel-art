@@ -391,6 +391,22 @@
     let valorBrilloActual = 100;
     let emojiSeleccionado = null;
 
+    // --- MANEJO DE RETROCESO (EVITAR SALIR DE LA PÁGINA) ---
+    window.addEventListener("popstate", function (e) {
+      const editorModal = document.getElementById('editorModal');
+      const imageModal = document.getElementById('imageModal');
+
+      if (editorModal.style.display === "flex") {
+        cerrarEditor(false);
+      } else if (imageModal.style.display === "flex") {
+        cerrarModal(false);
+      }
+    });
+
+    function agregarEstadoHistorial() {
+      history.pushState({ modalOpen: true }, "");
+    }
+
     async function obtenerGaleriaNube() {
       try {
         const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
@@ -540,6 +556,7 @@
       quitarEmoji();
 
       document.getElementById('editorModal').style.display = "flex";
+      agregarEstadoHistorial();
 
       if (cropper) { cropper.destroy(); }
       cropper = new Cropper(imageToEdit, {
@@ -560,7 +577,7 @@
     function fijarEmoji() {
       const el = document.getElementById('activeEmoji');
       if (el && emojiSeleccionado) {
-        el.style.border = 'none'; // Quita el borde punteado para confirmar la ubicación
+        el.style.border = 'none';
       }
     }
 
@@ -609,10 +626,13 @@
       }
     }
 
-    function cerrarEditor() {
+    function cerrarEditor(backInHistory = true) {
       if (cropper) { cropper.destroy(); cropper = null; }
       document.getElementById('editorModal').style.display = "none";
       indiceEnEdicion = -1;
+      if (backInHistory && history.state && history.state.modalOpen) {
+        history.back();
+      }
     }
 
     async function guardarEdicion() {
@@ -716,10 +736,14 @@
       document.getElementById('modalImg').src = url;
       document.getElementById('modalCaption').innerText = title;
       modal.style.display = "flex";
+      agregarEstadoHistorial();
     }
 
-    function cerrarModal() {
+    function cerrarModal(backInHistory = true) {
       document.getElementById('imageModal').style.display = "none";
+      if (backInHistory && history.state && history.state.modalOpen) {
+        history.back();
+      }
     }
 
     document.addEventListener("DOMContentLoaded", obtenerGaleriaNube);
