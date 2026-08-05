@@ -15,7 +15,30 @@
       padding: 20px;
       margin: 0;
     }
-    h1 { color: #3b82f6; }
+    
+    /* Barra superior para Admin */
+    .admin-bar {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+    .btn-admin-toggle {
+      background: transparent;
+      border: 1px solid #444;
+      color: #aaa;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+    .btn-admin-toggle:hover {
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    h1 { color: #3b82f6; margin-top: 0; }
     
     /* Formulario */
     .card-form {
@@ -62,11 +85,12 @@
     .gallery-card {
       background: #1e1e1e;
       border-radius: 8px;
-      padding: 10px;
+      padding: 12px;
       text-align: center;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      border: 1px solid #2a2a2a;
     }
     .gallery-card img {
       width: 100%;
@@ -82,29 +106,30 @@
     }
     .gallery-card h3 {
       font-size: 1rem;
-      margin: 10px 0;
+      margin: 12px 0;
       word-break: break-word;
     }
 
-    /* Botones de acción */
+    /* Botones Minimalistas Oscuros */
     .card-actions {
       display: flex;
       gap: 8px;
       justify-content: center;
     }
     .btn-action {
-      border: none;
+      background-color: #262626;
       padding: 6px 12px;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 0.85em;
-      font-weight: bold;
-      color: #fff;
+      font-weight: 500;
+      color: #e5e5e5;
+      transition: all 0.2s ease;
     }
-    .btn-edit { background-color: #f59e0b; }
-    .btn-edit:hover { background-color: #d97706; }
-    .btn-delete { background-color: #ef4444; }
-    .btn-delete:hover { background-color: #dc2626; }
+    .btn-edit { border: 1px solid #3b82f6; }
+    .btn-edit:hover { background-color: #3b82f6; color: #ffffff; }
+    .btn-delete { border: 1px solid #ef4444; }
+    .btn-delete:hover { background-color: #ef4444; color: #ffffff; }
 
     /* Modal Visor de Imagen Grande */
     .modal {
@@ -126,11 +151,7 @@
       object-fit: contain;
       border-radius: 8px;
     }
-    .modal-caption {
-      margin-top: 15px;
-      font-size: 1.2rem;
-      color: #fff;
-    }
+    .modal-caption { margin-top: 15px; font-size: 1.2rem; color: #fff; }
     .modal-close {
       position: absolute;
       top: 20px;
@@ -143,6 +164,10 @@
   </style>
 </head>
 <body>
+
+  <div class="admin-bar">
+    <button class="btn-admin-toggle" onclick="toggleAdminMode()" id="adminBtn">🔐 Modo Admin</button>
+  </div>
 
   <h1>Galería de Pixel Art</h1>
 
@@ -169,6 +194,26 @@
 
   <script>
     const API_KEY = "9fc58ee8b707046ece9681fa65e39604";
+    const ADMIN_PIN = "1234"; // 👈 AQUÍ PUEDES CAMBIAR TU CLAVE
+    let isAdmin = false;
+
+    function toggleAdminMode() {
+      if (isAdmin) {
+        isAdmin = false;
+        document.getElementById('adminBtn').innerText = "🔐 Modo Admin";
+        alert("Modo Admin desactivado.");
+      } else {
+        const pass = prompt("Ingresa la clave de administrador:");
+        if (pass === ADMIN_PIN) {
+          isAdmin = true;
+          document.getElementById('adminBtn').innerText = "🔓 Salir de Modo Admin";
+          alert("¡Modo Admin activado! Ya puedes editar y eliminar.");
+        } else if (pass !== null) {
+          alert("Clave incorrecta.");
+        }
+      }
+      cargarGaleria();
+    }
 
     async function subirImagen() {
       const nameInput = document.getElementById('nameInput');
@@ -226,19 +271,26 @@
       savedArt.forEach((item, index) => {
         const card = document.createElement('div');
         card.className = 'gallery-card';
-        card.innerHTML = `
-          <img src="${item.url}" alt="${item.title}" onclick="abrirModal('${item.url}', '${item.title}')">
-          <h3>${item.title}</h3>
+        
+        // Solo muestra botones si el usuario activó el modo admin
+        const actionButtons = isAdmin ? `
           <div class="card-actions">
             <button class="btn-action btn-edit" onclick="editarTitulo(${index})">✏️ Editar</button>
             <button class="btn-action btn-delete" onclick="eliminarImagen(${index})">🗑️ Eliminar</button>
           </div>
+        ` : '';
+
+        card.innerHTML = `
+          <img src="${item.url}" alt="${item.title}" onclick="abrirModal('${item.url}', '${item.title}')">
+          <h3>${item.title}</h3>
+          ${actionButtons}
         `;
         galleryGrid.appendChild(card);
       });
     }
 
     function editarTitulo(index) {
+      if (!isAdmin) return;
       const savedArt = JSON.parse(localStorage.getItem('pixelArtGallery') || '[]');
       const nuevoTitulo = prompt("Edita el nombre del dibujo:", savedArt[index].title);
       
@@ -250,6 +302,7 @@
     }
 
     function eliminarImagen(index) {
+      if (!isAdmin) return;
       if (confirm("¿Seguro que quieres eliminar esta imagen?")) {
         const savedArt = JSON.parse(localStorage.getItem('pixelArtGallery') || '[]');
         savedArt.splice(index, 1);
