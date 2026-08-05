@@ -198,7 +198,7 @@
     .editor-container {
       position: relative;
       width: 100%;
-      height: 55vh;
+      height: 52vh;
       background: #000;
       display: flex;
       align-items: center;
@@ -210,7 +210,6 @@
       max-height: 100%;
     }
 
-    /* Overlay para mover emojis libremente */
     .emoji-overlay {
       position: absolute;
       top: 50%;
@@ -228,26 +227,65 @@
       max-width: 400px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       text-align: center;
     }
+
+    /* Paleta de Emojis y Botones Rediseñados */
     .emoji-palette {
       display: flex;
-      gap: 10px;
+      align-items: center;
       justify-content: center;
+      gap: 8px;
       background: #1e1e1e;
-      padding: 8px;
-      border-radius: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #2a2a2a;
+      flex-wrap: wrap;
     }
     .emoji-btn {
-      font-size: 1.5rem;
-      background: none;
-      border: 1px solid #333;
-      border-radius: 6px;
+      font-size: 1.4rem;
+      background: #2a2a2a;
+      border: 1px solid #3d3d3d;
+      border-radius: 8px;
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 6px 10px;
+      transition: all 0.2s ease;
     }
-    .emoji-btn:hover { background: #2a2a2a; }
+    .emoji-btn:hover { background: #383838; transform: scale(1.05); }
+
+    .btn-emoji-done {
+      background: #00d26a;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-emoji-done:hover { background: #00b85c; }
+
+    .btn-emoji-clear {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid #ef4444;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+    .btn-emoji-clear:hover {
+      background: #ef4444;
+      color: #ffffff;
+    }
 
     .editor-controls label { font-size: 0.85rem; color: #ccc; }
     .editor-btns {
@@ -256,24 +294,28 @@
       justify-content: center;
     }
     .btn-editor-save {
-      background: #00d26a;
+      background: #3b82f6;
       border: none;
-      color: #000;
-      padding: 10px 20px;
+      color: #ffffff;
+      padding: 12px 20px;
       font-weight: bold;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       flex: 1;
+      font-size: 0.95rem;
     }
+    .btn-editor-save:hover { background: #2563eb; }
     .btn-editor-cancel {
-      background: #333;
-      border: none;
+      background: #2a2a2a;
+      border: 1px solid #444;
       color: #fff;
-      padding: 10px 20px;
-      border-radius: 6px;
+      padding: 12px 20px;
+      border-radius: 8px;
       cursor: pointer;
       flex: 1;
+      font-size: 0.95rem;
     }
+    .btn-editor-cancel:hover { background: #3d3d3d; }
   </style>
 </head>
 <body>
@@ -307,7 +349,7 @@
 
   <!-- Modal Editor de Imagen y Emojis -->
   <div id="editorModal" class="editor-modal">
-    <h3>Editar Imagen & Tapar Firma</h3>
+    <h3 style="margin: 5px 0;">Editar Imagen & Tapar Firma</h3>
     <div class="editor-container" id="editorContainer">
       <img id="imageToEdit" src="" alt="Editar">
       <div id="activeEmoji" class="emoji-overlay" style="display:none;">🖤</div>
@@ -315,14 +357,15 @@
     
     <div class="editor-controls">
       <div>
-        <label>Selecciona un Emoji/Sticker para tapar:</label>
+        <label style="display:block; margin-bottom: 6px;">Selecciona un emoji para cubrir detalles:</label>
         <div class="emoji-palette">
           <button class="emoji-btn" onclick="colocarEmoji('🖤')">🖤</button>
           <button class="emoji-btn" onclick="colocarEmoji('🌸')">🌸</button>
-
           <button class="emoji-btn" onclick="colocarEmoji('✨')">✨</button>
           <button class="emoji-btn" onclick="colocarEmoji('👑')">👑</button>
-          <button class="emoji-btn" onclick="quitarEmoji()">❌ Limpiar</button>
+          
+          <button class="btn-emoji-done" onclick="fijarEmoji()">✓ Listo</button>
+          <button class="btn-emoji-clear" onclick="quitarEmoji()">🗑️ Limpiar</button>
         </div>
       </div>
 
@@ -331,7 +374,7 @@
       
       <div class="editor-btns">
         <button class="btn-editor-cancel" onclick="cerrarEditor()">Cancelar</button>
-        <button class="btn-editor-save" id="btnSaveEdit" onclick="guardarEdicion()">Guardar Cambios</button>
+        <button class="btn-editor-save" id="btnSaveEdit" onclick="guardarEdicion()">Guardar Imagen</button>
       </div>
     </div>
   </div>
@@ -510,13 +553,23 @@
       const el = document.getElementById('activeEmoji');
       el.innerText = char;
       el.style.display = 'block';
+      el.style.border = '1px dashed #00d26a';
       emojiSeleccionado = char;
       hacerArrastrable(el);
+    }
+
+    function fijarEmoji() {
+      const el = document.getElementById('activeEmoji');
+      if (emojiSeleccionado) {
+        el.style.border = 'none';
+        alert("Emoji fijado en esta posición.");
+      }
     }
 
     function quitarEmoji() {
       const el = document.getElementById('activeEmoji');
       el.style.display = 'none';
+      el.style.border = 'none';
       emojiSeleccionado = null;
     }
 
@@ -568,7 +621,7 @@
       if (!cropper || indiceEnEdicion === -1) return;
 
       const btnSave = document.getElementById('btnSaveEdit');
-      btnSave.innerText = "Procesando...";
+      btnSave.innerText = "Guardando...";
       btnSave.disabled = true;
 
       const croppedCanvas = cropper.getCroppedCanvas();
@@ -581,7 +634,6 @@
       ctx.filter = `brightness(${valorBrilloActual}%)`;
       ctx.drawImage(croppedCanvas, 0, 0);
 
-      // Si hay emoji activo, estamparlo en el lienzo final
       const activeEmoji = document.getElementById('activeEmoji');
       if (emojiSeleccionado && activeEmoji.style.display !== 'none') {
         const containerRect = document.getElementById('editorContainer').getBoundingClientRect();
@@ -622,45 +674,5 @@
           console.error(err);
           alert("Error de conexión al guardar.");
         } finally {
-          btnSave.innerText = "Guardar Cambios";
-          btnSave.disabled = false;
-        }
-      }, 'image/png');
-    }
-
-    async function editarTitulo(index) {
-      if (!isAdmin) return;
-      const nuevoTitulo = prompt("Edita el nombre del dibujo:", galeriaActual[index].title);
-      
-      if (nuevoTitulo !== null && nuevoTitulo.trim() !== "") {
-        const copia = [...galeriaActual];
-        copia[index].title = nuevoTitulo.trim();
-        await guardarGaleriaNube(copia);
-      }
-    }
-
-    async function eliminarImagen(index) {
-      if (!isAdmin) return;
-      if (confirm("¿Seguro que quieres eliminar esta imagen?")) {
-        const copia = [...galeriaActual];
-        copia.splice(index, 1);
-        await guardarGaleriaNube(copia);
-      }
-    }
-
-    function abrirModal(url, title) {
-      const modal = document.getElementById('imageModal');
-      document.getElementById('modalImg').src = url;
-      document.getElementById('modalCaption').innerText = title;
-      modal.style.display = "flex";
-    }
-
-    function cerrarModal() {
-      document.getElementById('imageModal').style.display = "none";
-    }
-
-    document.addEventListener("DOMContentLoaded", obtenerGaleriaNube);
-  </script>
-</body>
-  </html>
-      
+          btnSave.innerText = "Guardar Imagen";
+          btnSave.disa
