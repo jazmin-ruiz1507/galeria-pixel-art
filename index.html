@@ -675,4 +675,43 @@
           alert("Error de conexión al guardar.");
         } finally {
           btnSave.innerText = "Guardar Imagen";
-          btnSave.disa
+          btnSave.disabled = false;
+        }
+      }, 'image/png');
+    }
+
+    async function editarTitulo(index) {
+      if (!isAdmin) return;
+      const nuevoTitulo = prompt("Edita el nombre del dibujo:", galeriaActual[index].title);
+      
+      if (nuevoTitulo !== null && nuevoTitulo.trim() !== "") {
+        const copia = [...galeriaActual];
+        copia[index].title = nuevoTitulo.trim();
+        await guardarGaleriaNube(copia);
+      }
+    }
+
+    async function eliminarImagen(index) {
+      if (!isAdmin) return;
+      if (confirm("¿Seguro que quieres eliminar esta imagen?")) {
+        const copia = [...galeriaActual];
+        copia.splice(index, 1);
+        await guardarGaleriaNube(copia);
+      }
+    }
+
+    function abrirModal(url, title) {
+      const modal = document.getElementById('imageModal');
+      document.getElementById('modalImg').src = url;
+      document.getElementById('modalCaption').innerText = title;
+      modal.style.display = "flex";
+    }
+
+    function cerrarModal() {
+      document.getElementById('imageModal').style.display = "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", obtenerGaleriaNube);
+  </script>
+</body>
+</html>
