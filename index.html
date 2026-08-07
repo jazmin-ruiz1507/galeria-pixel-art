@@ -128,7 +128,7 @@
       border: 1px solid #444;
     }
 
-    /* VISOR VISTA PREVIA (IMAGEN GRANDE) */
+    /* VISOR VISTA PREVIA */
     .preview-modal {
       display: none;
       position: fixed;
@@ -401,7 +401,6 @@
     let paintCanvas, paintCtx, isDrawing = false;
     let historyStack = [];
 
-    // Manejar el botón 'Atrás' del navegador
     window.addEventListener('popstate', function(event) {
       const previewModal = document.getElementById('previewModal');
       const editorModal = document.getElementById('editorModal');
@@ -464,8 +463,11 @@
           </div>
         ` : '';
 
+        // Si existe miniatura se usa para la vista general, si no la URL original
+        const imgThumb = item.thumb || item.url;
+
         card.innerHTML = `
-          <img src="${item.url}" alt="${item.title}" onclick="abrirVistaPrevia(${index})">
+          <img src="${imgThumb}" alt="${item.title}" loading="lazy" onclick="abrirVistaPrevia(${index})">
           <h3>${item.title}</h3>
           ${actionButtons}
         `;
@@ -526,7 +528,11 @@
         const data = await res.json();
 
         if (data.success) {
-          const nuevaGaleria = [...galeriaActual, { title: title, url: data.data.url }];
+          const nuevaGaleria = [...galeriaActual, { 
+            title: title, 
+            url: data.data.url,
+            thumb: data.data.thumb ? data.data.thumb.url : data.data.url 
+          }];
           await guardarGaleriaNube(nuevaGaleria);
           statusMsg.innerText = "¡Imagen guardada!";
           nameInput.value = "";
@@ -764,6 +770,7 @@
 
         if (uploadData.success) {
           galeriaActual[indiceEnEdicion].url = uploadData.data.url;
+          galeriaActual[indiceEnEdicion].thumb = uploadData.data.thumb ? uploadData.data.thumb.url : uploadData.data.url;
           await guardarGaleriaNube(galeriaActual);
           cerrarEditor();
         }
