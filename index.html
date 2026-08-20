@@ -426,6 +426,10 @@
     let paintCanvas, paintCtx, isDrawing = false;
     let historyStack = [];
 
+    // Variables para detección de deslizamiento táctil (Swipe)
+    let touchStartX = 0;
+    let touchEndX = 0;
+
     window.addEventListener('popstate', function(event) {
       const previewModal = document.getElementById('previewModal');
       const editorModal = document.getElementById('editorModal');
@@ -437,7 +441,7 @@
       }
     });
 
-    // Control por teclado para cambiar imágenes con flechas
+    // Control por teclado (Flechas ← / →)
     window.addEventListener('keydown', function(e) {
       const previewModal = document.getElementById('previewModal');
       if (previewModal.style.display === "flex") {
@@ -446,6 +450,28 @@
         if (e.key === "Escape") cerrarVistaPrevia();
       }
     });
+
+    // Control por gestos táctiles en el modal de vista previa
+    const previewModalEl = document.getElementById('previewModal');
+
+    previewModalEl.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+    }, false);
+
+    previewModalEl.addEventListener('touchend', function(e) {
+      touchEndX = e.changedTouches[0].screenX;
+      manejadorSwipe();
+    }, false);
+
+    function manejadorSwipe() {
+      const limiteSensibilidad = 50; // px mínimos para activar
+      if (touchEndX < touchStartX - limiteSensibilidad) {
+        cambiarImagenPreview(1); // Deslizar hacia la izquierda = Siguiente
+      }
+      if (touchEndX > touchStartX + limiteSensibilidad) {
+        cambiarImagenPreview(-1); // Deslizar hacia la derecha = Anterior
+      }
+    }
 
     function toggleAdminMode() {
       const uploadForm = document.getElementById('uploadForm');
