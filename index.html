@@ -93,7 +93,24 @@
       border: 1px solid #2a2a2a;
       box-sizing: border-box;
       min-height: 180px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
     }
+    /* Estilos cuando se está arrastrando en modo admin */
+    .gallery-card.draggable-card {
+      cursor: grab;
+    }
+    .gallery-card.draggable-card:active {
+      cursor: grabbing;
+    }
+    .gallery-card.dragging {
+      opacity: 0.4;
+      border: 2px dashed #3b82f6;
+    }
+    .gallery-card.drag-over {
+      border-color: #22c55e;
+      transform: scale(1.03);
+    }
+
     .gallery-card img {
       width: 100%;
       height: 130px;
@@ -124,10 +141,6 @@
       gap: 4px;
       justify-content: center;
     }
-    .move-row {
-      display: flex;
-      gap: 4px;
-    }
     .btn-action {
       background-color: #262626;
       padding: 5px 8px;
@@ -137,7 +150,7 @@
       font-weight: 500;
       color: #e5e5e5;
       border: 1px solid #444;
-      flex: 1;
+      width: 100%;
     }
     .btn-action:hover { background-color: #333; }
 
@@ -351,7 +364,6 @@
   <div class="card-form" id="uploadForm">
     <h2>Subir nuevo dibujo</h2>
     <input type="text" id="nameInput" placeholder="Nombre del personaje / dibujo">
-    <!-- SE CORRIGIÓ: Se removió 'capture="environment"' para permitir elegir de la galería o tomar foto -->
     <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="subirImagen()">
     <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
       📁 Seleccionar Archivo / Foto
@@ -390,7 +402,7 @@
       </div>
 
       <div id="panelCropControls">
-        <button class="btn-action" style="width: 100%; padding: 12px; background: #eab308; color: #000; font-weight: bold; font-size: 0.95rem; border: none; border-radius: 8px;" onclick="aplicarRecorte()">
+        <button class="btn-action" style="background: #eab308; color: #000; font-weight: bold; font-size: 0.95rem; border: none; border-radius: 8px;" onclick="aplicarRecorte()">
           ✂️ Aplicar Recorte
         </button>
       </div>
@@ -431,6 +443,7 @@
     let indiceVistaPrevia = -1;
     let paintCanvas, paintCtx, isDrawing = false;
     let historyStack = [];
+    let draggedIndex = null;
 
     let touchStartX = 0;
     let touchEndX = 0;
@@ -522,15 +535,22 @@
 
       galeriaActual.forEach((item, index) => {
         const card = document.createElement('div');
-        card.className = 'gallery-card';
+        card.className = `gallery-card ${isAdmin ? 'draggable-card' : ''}`;
+        
+        if (isAdmin) {
+          card.draggable = true;
+          card.dataset.index = index;
 
-        // Botones de administrador incluyendo mover de posición
+          // Eventos de arrastrar y soltar (Drag and Drop)
+          card.addEventListener('dragstart', handleDragStart);
+          card.addEventListener('dragover', handleDragOver);
+          card.addEventListener('dragleave', handleDragLeave);
+          card.addEventListener('drop', handleDrop);
+          card.addEventListener('dragend', handleDragEnd);
+        }
+
         const actionButtons = isAdmin ? `
           <div class="card-actions">
-            <div class="move-row">
-              <button class="btn-action" onclick="moverImagen(${index}, -1)" ${index === 0 ? 'disabled style="opacity:0.3"' : ''}>⬅️ Mover</button>
-              <button class="btn-action" onclick="moverImagen(${index}, 1)" ${index === galeriaActual.length - 1 ? 'disabled style="opacity:0.3"' : ''}>Mover ➡️</button>
-            </div>
             <button class="btn-action" onclick="renombrar(${index})">✏️ Renombrar</button>
             <button class="btn-action" onclick="abrirEditor(${index})">⚙️ Editar Imagen</button>
             <button class="btn-action" style="border-color:#ef4444; color:#ef4444;" onclick="eliminar(${index})">🗑️ Eliminar</button>
@@ -548,16 +568,42 @@
       });
     }
 
-    // Función para reordenar imágenes en la galería
-    async function moverImagen(index, direccion) {
-      const nuevoIndice = index + direccion;
-      if (nuevoIndice < 0 || nuevoIndice >= galeriaActual.length) return;
+    // Funciones de Arrastrar y Soltar (Drag & Drop)
+    function handleDragStart(e) {
+      draggedIndex = parseInt(this.dataset.index);
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
 
-      const temp = galeriaActual[index];
-      galeriaActual[index] = galeriaActual[nuevoIndice];
-      galeriaActual[nuevoIndice] = temp;
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      this.classList.add('drag-over');
+    }
 
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    async function handleDrop(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+      const targetIndex = parseInt(this.dataset.index);
+
+      if (isNaN(draggedIndex) || draggedIndex === targetIndex) return;
+
+      // Reordenar el arreglo localmente
+      const movedItem = galeriaActual.splice(draggedIndex, 1)[0];
+      galeriaActual.splice(targetIndex, 0, movedItem);
+
+      // Guardar el nuevo orden en la nube automáticamente
       await guardarGaleriaNube(galeriaActual);
+    }
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.gallery-card').forEach(c => c.classList.remove('drag-over'));
+      draggedIndex = null;
     }
 
     function abrirVistaPrevia(index) {
