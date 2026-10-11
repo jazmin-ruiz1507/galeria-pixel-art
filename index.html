@@ -124,6 +124,10 @@
       gap: 4px;
       justify-content: center;
     }
+    .move-row {
+      display: flex;
+      gap: 4px;
+    }
     .btn-action {
       background-color: #262626;
       padding: 5px 8px;
@@ -133,7 +137,9 @@
       font-weight: 500;
       color: #e5e5e5;
       border: 1px solid #444;
+      flex: 1;
     }
+    .btn-action:hover { background-color: #333; }
 
     /* VISOR VISTA PREVIA */
     .preview-modal {
@@ -175,7 +181,6 @@
       cursor: pointer;
     }
 
-    /* BOTONES DE NAVEGACIÓN EN LA VISTA PREVIA */
     .nav-btn {
       position: absolute;
       top: 50%;
@@ -346,16 +351,17 @@
   <div class="card-form" id="uploadForm">
     <h2>Subir nuevo dibujo</h2>
     <input type="text" id="nameInput" placeholder="Nombre del personaje / dibujo">
-    <input type="file" id="fileInput" accept="image/*" capture="environment" style="display: none;" onchange="subirImagen()">
+    <!-- SE CORRIGIÓ: Se removió 'capture="environment"' para permitir elegir de la galería o tomar foto -->
+    <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="subirImagen()">
     <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
-      📷 Tomar Foto / Seleccionar
+      📁 Seleccionar Archivo / Foto
     </button>
     <div id="statusMsg" style="margin-top: 10px; font-size: 0.9em;"></div>
   </div>
 
   <div class="gallery-grid" id="galleryGrid"></div>
 
-  <!-- MODAL VISTA PREVIA CON NAVEGACIÓN -->
+  <!-- MODAL VISTA PREVIA -->
   <div id="previewModal" class="preview-modal" onclick="cerrarVistaPrevia()">
     <button class="btn-close-preview" onclick="cerrarVistaPrevia()">✕</button>
     <button class="nav-btn prev" onclick="event.stopPropagation(); cambiarImagenPreview(-1)">‹</button>
@@ -426,7 +432,6 @@
     let paintCanvas, paintCtx, isDrawing = false;
     let historyStack = [];
 
-    // Variables para detección de deslizamiento táctil (Swipe)
     let touchStartX = 0;
     let touchEndX = 0;
 
@@ -441,7 +446,6 @@
       }
     });
 
-    // Control por teclado (Flechas ← / →)
     window.addEventListener('keydown', function(e) {
       const previewModal = document.getElementById('previewModal');
       if (previewModal.style.display === "flex") {
@@ -451,9 +455,7 @@
       }
     });
 
-    // Control por gestos táctiles en el modal de vista previa
     const previewModalEl = document.getElementById('previewModal');
-
     previewModalEl.addEventListener('touchstart', function(e) {
       touchStartX = e.changedTouches[0].screenX;
     }, false);
@@ -464,13 +466,9 @@
     }, false);
 
     function manejadorSwipe() {
-      const limiteSensibilidad = 50; // px mínimos para activar
-      if (touchEndX < touchStartX - limiteSensibilidad) {
-        cambiarImagenPreview(1); // Deslizar hacia la izquierda = Siguiente
-      }
-      if (touchEndX > touchStartX + limiteSensibilidad) {
-        cambiarImagenPreview(-1); // Deslizar hacia la derecha = Anterior
-      }
+      const limiteSensibilidad = 50;
+      if (touchEndX < touchStartX - limiteSensibilidad) cambiarImagenPreview(1);
+      if (touchEndX > touchStartX + limiteSensibilidad) cambiarImagenPreview(-1);
     }
 
     function toggleAdminMode() {
@@ -526,11 +524,16 @@
         const card = document.createElement('div');
         card.className = 'gallery-card';
 
+        // Botones de administrador incluyendo mover de posición
         const actionButtons = isAdmin ? `
           <div class="card-actions">
-            <button class="btn-action btn-edit" onclick="renombrar(${index})">✏️ Renombrar</button>
-            <button class="btn-action btn-crop" onclick="abrirEditor(${index})">⚙️ Editar Imagen</button>
-            <button class="btn-action btn-delete" style="border-color:#ef4444;" onclick="eliminar(${index})">🗑️ Eliminar</button>
+            <div class="move-row">
+              <button class="btn-action" onclick="moverImagen(${index}, -1)" ${index === 0 ? 'disabled style="opacity:0.3"' : ''}>⬅️ Mover</button>
+              <button class="btn-action" onclick="moverImagen(${index}, 1)" ${index === galeriaActual.length - 1 ? 'disabled style="opacity:0.3"' : ''}>Mover ➡️</button>
+            </div>
+            <button class="btn-action" onclick="renombrar(${index})">✏️ Renombrar</button>
+            <button class="btn-action" onclick="abrirEditor(${index})">⚙️ Editar Imagen</button>
+            <button class="btn-action" style="border-color:#ef4444; color:#ef4444;" onclick="eliminar(${index})">🗑️ Eliminar</button>
           </div>
         ` : '';
 
@@ -543,6 +546,18 @@
         `;
         grid.appendChild(card);
       });
+    }
+
+    // Función para reordenar imágenes en la galería
+    async function moverImagen(index, direccion) {
+      const nuevoIndice = index + direccion;
+      if (nuevoIndice < 0 || nuevoIndice >= galeriaActual.length) return;
+
+      const temp = galeriaActual[index];
+      galeriaActual[index] = galeriaActual[nuevoIndice];
+      galeriaActual[nuevoIndice] = temp;
+
+      await guardarGaleriaNube(galeriaActual);
     }
 
     function abrirVistaPrevia(index) {
