@@ -95,20 +95,23 @@
       min-height: 180px;
       transition: transform 0.15s ease, border-color 0.15s ease;
     }
-    /* Estilos cuando se está arrastrando en modo admin */
+    
+    /* Estilos interactivos para arrastrar en Modo Admin */
     .gallery-card.draggable-card {
       cursor: grab;
+      user-select: none;
     }
     .gallery-card.draggable-card:active {
       cursor: grabbing;
     }
     .gallery-card.dragging {
-      opacity: 0.4;
+      opacity: 0.3;
       border: 2px dashed #3b82f6;
     }
     .gallery-card.drag-over {
       border-color: #22c55e;
-      transform: scale(1.03);
+      background: #252525;
+      transform: scale(1.02);
     }
 
     .gallery-card img {
@@ -402,7 +405,7 @@
       </div>
 
       <div id="panelCropControls">
-        <button class="btn-action" style="background: #eab308; color: #000; font-weight: bold; font-size: 0.95rem; border: none; border-radius: 8px;" onclick="aplicarRecorte()">
+        <button class="btn-action" style="width: 100%; padding: 12px; background: #eab308; color: #000; font-weight: bold; font-size: 0.95rem; border: none; border-radius: 8px;" onclick="aplicarRecorte()">
           ✂️ Aplicar Recorte
         </button>
       </div>
@@ -541,7 +544,7 @@
           card.draggable = true;
           card.dataset.index = index;
 
-          // Eventos de arrastrar y soltar (Drag and Drop)
+          // Asignar eventos nativos de Arrastrar y Soltar (Drag and Drop)
           card.addEventListener('dragstart', handleDragStart);
           card.addEventListener('dragover', handleDragOver);
           card.addEventListener('dragleave', handleDragLeave);
@@ -568,7 +571,7 @@
       });
     }
 
-    // Funciones de Arrastrar y Soltar (Drag & Drop)
+    // Funciones del Drag & Drop
     function handleDragStart(e) {
       draggedIndex = parseInt(this.dataset.index);
       this.classList.add('dragging');
@@ -592,11 +595,11 @@
 
       if (isNaN(draggedIndex) || draggedIndex === targetIndex) return;
 
-      // Reordenar el arreglo localmente
+      // Cambiar de posición en el arreglo
       const movedItem = galeriaActual.splice(draggedIndex, 1)[0];
       galeriaActual.splice(targetIndex, 0, movedItem);
 
-      // Guardar el nuevo orden en la nube automáticamente
+      // Guardar automáticamente el nuevo orden en la nube
       await guardarGaleriaNube(galeriaActual);
     }
 
